@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django import forms
 from .models import Post, Category, Images, BlogSettings, SocialMedia
 
 
@@ -63,3 +64,12 @@ class BlogSettingsAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return BlogSettings.objects.count() == 0
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields["blog_desc"].widget = forms.Textarea(attrs={
+            'rows': 6,
+            'cols': 60,
+            'style': 'font-family: monospace;'  # дополнительные стили
+        })
+        return form

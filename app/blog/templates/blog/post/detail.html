@@ -1,5 +1,11 @@
 {% extends "blog/base.html" %}
-{% block title %}{{ post.title }}{% endblock %}
+{% block title %}
+    {% if category %}
+        {{ category }}
+    {% else %}
+        {{ title }}
+    {% endif %}
+{% endblock %}
 {% load my_filters %}
 {% block content %}
     <article class="blog-post px-3 py-5 p-md-5">
@@ -17,11 +23,12 @@
                 {% if post.images and post.get_path_image_main %}
                 <figure class="blog-banner">
                     <a href="https://made4dev.com">
-                        <img class="img-fluid"  src="{{ MEDIA_URL }}{{ post.get_path_image_main }}"  alt="image"></a>
-                    <figcaption class="mt-2 text-center image-caption">Image Credit: 
+                        <img class="img-fluid"  src="{{ MEDIA_URL }}{{ post.get_path_image_main }}"  
+                        alt="image"></a>
+                    <!-- <figcaption class="mt-2 text-center image-caption">Image Credit: 
                         <a class="theme-link" href="https://made4dev.com?ref=devblog" target="_blank">
                             made4dev.com (Premium Programming T-shirts)</a>
-                    </figcaption>
+                    </figcaption> -->
                 </figure>
                 {% endif %}
                 {{ post.body|markdown }}

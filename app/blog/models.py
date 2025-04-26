@@ -17,9 +17,18 @@ class PublishedManager(models.Manager):
 
 
 class BlogSettings(models.Model):
+    # TEMPLATE_COLORS = [
+    #     ("", "vk"),
+    #     ("fa-linkedin", "linkedin"),
+    #     ("fa-google", "google"),
+    #     ("fa-stack-overflow", "stack-overflow"),
+    #     ("fa-github", "github"),
+    #     ("fa-youtube", "youtube"),
+    # ]
     blog_title = models.CharField(max_length=250, unique=True)
     blog_desc = models.CharField(max_length=250, unique=True)
     blog_footer = models.CharField(max_length=250, unique=True)
+    #template_color=
 
     def __str__(self):
         return self.blog_title
@@ -29,7 +38,10 @@ class SocialMedia(models.Model):
     SOCIAL_MEDIA_TYPE_CHOICES = [
         ("fa-vk", "vk"),
         ("fa-linkedin", "linkedin"),
-        ("fa-twitter", "twitter"),
+        ("fa-google", "google"),
+        ("fa-stack-overflow", "stack-overflow"),
+        ("fa-github", "github"),
+        ("fa-youtube", "youtube"),
     ]
 
     title = models.CharField(
@@ -48,15 +60,36 @@ class SocialMedia(models.Model):
 
 
 class Category(models.Model):
+    TYPE_CATEGORY = [
+        ("posts", "Посты"),
+        ("page", "Страница"),
+    ]
+
     title = models.CharField(max_length=250, unique=True)
     num_item = models.SmallIntegerField(default=0)
     url_path = models.SlugField(max_length=250, default="")
+    type_category = models.CharField(
+        max_length=20, choices=TYPE_CATEGORY, default="posts"
+    )
 
     def __str__(self):
         return self.title
 
 
-# Create your models here.
+# class Page(models.Model):
+#     class Status(models.TextChoices):
+#         DRAFT = "DF", "Draft"
+#         PUBLISHED = "PB", "Published"
+
+#     title = models.CharField(max_length=250)
+#     slug = models.SlugField(max_length=250, unique_for_date="publish")
+#     created = models.DateTimeField(auto_now_add=True)
+#     updated = models.DateTimeField(auto_now=True) 
+#     publish = models.DateTimeField(default=timezone.now)   
+#     body = models.TextField()
+#     category = models.ForeignKey(
+#         Category, on_delete=models.SET_NULL, null=True, related_name="page"
+#     )
 class Post(models.Model):
     tags = TaggableManager()
 

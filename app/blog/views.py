@@ -1,18 +1,35 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils.html import escape
-from .models import Post
+from .models import Post, Category
 
 
 def post_list(request, category: str = None):
     params = dict()
+    tmp = "blog/post/list.html"
     if category:
-        posts = (
-            Post.objects.select_related("category")
-            .filter(category__url_path=category)
-            .all()
+        cat_type = Category.objects.filter(url_path=category).values().first()
+        q_post = Post.objects.select_related("category").filter(
+            category__url_path=category
         )
-        params.update({"cnt": posts.count()})
+        if cat_type["type_category"] == "posts":
+            posts = q_post.all()
+            params.update({"cnt": posts.count()})
+            params.update(
+                {
+                    "posts": posts,
+                    "category": cat_type["title"],
+                }
+            )
+        else:
+            page = q_post.values().first()
+            tmp = "blog/post/detail.html"
+            params.update({"post": page, "category": cat_type["title"]})
+            return render(
+                request,
+                tmp,
+                params,
+            )
     elif search := escape(request.GET.get("search", "")):
         posts = Post.get_posts_by_search(search)
         params.update({"search": search, "cnt": posts.count()})
@@ -30,7 +47,7 @@ def post_list(request, category: str = None):
     params.update({"posts": posts})
     return render(
         request,
-        "blog/post/list.html",
+        tmp,
         params,
     )
 
@@ -51,6 +68,7 @@ def post_detail(request, url_path, year, month, day, post):
         "blog/post/detail.html",
         {
             "post": current_post,
+            "category": current_post,
             "next_post": Post.get_prev_next_posts(url_path, current_post.pk, "pk"),
             "previous_post": Post.get_prev_next_posts(url_path, current_post.pk, "-pk"),
         },
