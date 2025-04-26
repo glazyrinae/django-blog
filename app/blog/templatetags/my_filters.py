@@ -4,14 +4,24 @@ import markdown
 
 register = template.Library()
 
-@register.filter
-def call_with(obj, arg):
-    """Вызывает метод obj.method(arg)"""
-    if hasattr(obj, 'get_image'):
-        return obj.get_image(arg)
-    return None
 
-
-@register.filter(name='markdown')
+@register.filter(name="markdown")
 def markdown_format(text):
     return mark_safe(markdown.markdown(text))
+
+
+@register.filter(name="plural")
+def choose_plural(amount: int, variants: list = ["пост", "поста", "постов"]) -> str:
+    if isinstance(variants, list) and len(variants) == 3:
+        if amount % 10 == 1 and amount % 100 != 11:
+            variant = 0
+        elif (
+            amount % 10 >= 2
+            and amount % 10 <= 4
+            and (amount % 100 < 10 or amount % 100 >= 20)
+        ):
+            variant = 1
+        else:
+            variant = 2
+        return f"{amount} {variants[variant]}"
+    return ""

@@ -1,62 +1,57 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-# Create your views here.
+from django.utils.html import escape
 from .models import Post
-from django.views.generic import ListView
-from .forms import EmailPostForm
 
 
-# class PostListView(ListView):
-#     """
-#     Альтернативное представление списка постов
-#     """
+def post_list(request, category: str = None):
+    params = dict()
+    if category:
+        posts = (
+            Post.objects.select_related("category")
+            .filter(category__url_path=category)
+            .all()
+        )
+        params.update({"cnt": posts.count()})
+    elif search := escape(request.GET.get("search", "")):
+        posts = Post.get_posts_by_search(search)
+        params.update({"search": search, "cnt": posts.count()})
+    else:
+        posts = Post.published.all()
+        paginator = Paginator(posts, 3)
+        page_number = request.GET.get("page", 1)
+        try:
+            posts = paginator.page(page_number)
+        except PageNotAnInteger:
+            posts = paginator.page(1)
+        except EmptyPage:
+            posts = paginator.page(paginator.num_pages)
 
-#     queryset = Post.published.all()
-#     context_object_name = "posts"
-#     paginate_by = 3
-#     template_name = "blog/post/list.html"
+    params.update({"posts": posts})
+    return render(
+        request,
+        "blog/post/list.html",
+        params,
+    )
 
 
-def post_list(request):
-    post_list = Post.published.all()
-    paginator = Paginator(post_list, 3)
-    page_number = request.GET.get("page", 1)
-    try:
-        posts = paginator.page(page_number)
-    except PageNotAnInteger:
-        # Если page_number не целое число, то
-        # выдать первую страницу
-        posts = paginator.page(1)
-    except EmptyPage:
-        # Если page_number находится вне диапазона, то
-        # выдать последнюю страницу результатов
-        posts = paginator.page(paginator.num_pages)
-    return render(request, "blog/post/list.html", {"posts": posts})
-
-
-def post_detail(request, year, month, day, post):
-    post = get_object_or_404(
-        Post,
+def post_detail(request, url_path, year, month, day, post):
+    current_post = get_object_or_404(
+        Post.objects.select_related("category"),
         status=Post.Status.PUBLISHED,
         slug=post,
         publish__year=year,
         publish__month=month,
         publish__day=day,
+        category__url_path=url_path,
     )
-    return render(request, "blog/post/detail.html", {"post": post})
 
-
-def post_share(request, post_id):
-    # Извлечь пост по идентификатору id
-    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
-    if request.method == "POST":
-        # Форма была передана на обработку
-        form = EmailPostForm(request.POST)
-        if form.is_valid():
-            # Поля формы успешно прошли валидацию
-            cd = form.cleaned_data
-            # ... отправить электронное письмо
-    else:
-        form = EmailPostForm()
-    return render(request, "blog/post/share.html", {"post": post, "form": form})
+    return render(
+        request,
+        "blog/post/detail.html",
+        {
+            "post": current_post,
+            "next_post": Post.get_prev_next_posts(url_path, current_post.pk, "pk"),
+            "previous_post": Post.get_prev_next_posts(url_path, current_post.pk, "-pk"),
+        },
+    )

@@ -3,11 +3,57 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from taggit.managers import TaggableManager
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(status=Post.Status.PUBLISHED)
+        return (
+            super()
+            .get_queryset()
+            .filter(status=Post.Status.PUBLISHED)
+            .order_by("-publish")
+        )
+
+
+class BlogSettings(models.Model):
+    blog_title = models.CharField(max_length=250, unique=True)
+    blog_desc = models.CharField(max_length=250, unique=True)
+    blog_footer = models.CharField(max_length=250, unique=True)
+
+    def __str__(self):
+        return self.blog_title
+
+
+class SocialMedia(models.Model):
+    SOCIAL_MEDIA_TYPE_CHOICES = [
+        ("fa-vk", "vk"),
+        ("fa-linkedin", "linkedin"),
+        ("fa-twitter", "twitter"),
+    ]
+
+    title = models.CharField(
+        max_length=250,
+        choices=SOCIAL_MEDIA_TYPE_CHOICES,
+        default="vk",
+        verbose_name="social media",
+    )
+    url_link = models.CharField(max_length=250, default="")
+    blog_settings = models.ForeignKey(
+        BlogSettings, on_delete=models.CASCADE, related_name="social_media"
+    )
+
+    def __str__(self):
+        return self.title
+
+
+class Category(models.Model):
+    title = models.CharField(max_length=250, unique=True)
+    num_item = models.SmallIntegerField(default=0)
+    url_path = models.SlugField(max_length=250, default="")
+
+    def __str__(self):
+        return self.title
 
 
 # Create your models here.
@@ -34,6 +80,9 @@ class Post(models.Model):
 
     objects = models.Manager()  # менеджер, применяемый по умолчанию
     published = PublishedManager()  # конкретно-прикладной менеджер
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True, related_name="posts"
+    )
 
     class Meta:
         ordering = ["-publish"]
@@ -47,36 +96,65 @@ class Post(models.Model):
     def get_absolute_url(self):
         return reverse(
             "blog:post_detail",
-            args=[self.publish.year, self.publish.month, self.publish.day, self.slug],
+            args=[
+                self.category.url_path,
+                self.publish.year,
+                self.publish.month,
+                self.publish.day,
+                self.slug,
+            ],
         )
 
     def get_image(self, image_type: str):
         """Список файлов"""
         return (
             self.images.filter(image_type=image_type)
-            .values_list('image', flat=True)
+            .values_list("image", flat=True)
             .first()
         )
-    
+
+    @classmethod
+    def get_posts_by_search(cls, search):
+        search_vector = SearchVector("title", "body")
+        search_query = SearchQuery(search)
+        results = (
+            cls.published.annotate(
+                search=search_vector, rank=SearchRank(search_vector, search_query)
+            )
+            .filter(search=search_query)
+            .order_by("-rank")
+        )
+        return results
+
+    @classmethod
+    def get_prev_next_posts(cls, url_path: str, pk: int, sorted_by_pk: str) -> tuple:
+        return (
+            cls.objects.filter(
+                category__url_path=url_path,
+                status=cls.Status.PUBLISHED,
+                pk__gt=pk,
+            )
+            .order_by(sorted_by_pk)
+            .first()
+        )
+
     @property
     def get_path_image_thumbnail(self):
         """Список файлов"""
         return (
-            self.images.filter(image_type='thumbnail')
-            .values_list('thumbnail', flat=True)
+            self.images.filter(image_type="thumbnail")
+            .values_list("thumbnail", flat=True)
             .first()
         )
-    
+
     @property
     def get_path_image_main(self):
         """Список файлов"""
         return (
-            self.images.filter(image_type='main')
-            .values_list('image', flat=True)
+            self.images.filter(image_type="main")
+            .values_list("image", flat=True)
             .first()
         )
-    # def get_thumbnail(self):
-    #     return self.images.filter(post_id=self.id, image_type="thumbnail").thumbnail
 
 
 class Images(models.Model):

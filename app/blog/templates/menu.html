@@ -1,0 +1,15 @@
+<ul class="navbar-nav flex-column text-start">
+    <li class="nav-item">
+        <a class="nav-link {% if active == 'home' %}active{% endif %}" href="{% url 'blog:post_list' %}">
+            <i class="fas fa-home fa-fw me-2"></i>В начало<span class="sr-only">(current)</span>
+        </a>
+    </li>
+{% for item in categories %}                
+    <li class="nav-item">
+        <a class="nav-link {% if active == item.url_path %}active{% endif %}" href="{% url 'blog:category' category=item.url_path %}">
+            <i class="fas fa-bookmark fa-fw me-2"></i>
+            {{item.title}}
+        </a>
+    </li>
+{% endfor %}
+</ul>

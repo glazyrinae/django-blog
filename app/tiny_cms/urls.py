@@ -1,5 +1,5 @@
 """
-URL configuration for hello_django project.
+URL configuration for tiny_cms project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -21,7 +21,7 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('blog/', include('blog.urls', namespace='blog')),
+    path('', include('blog.urls', namespace='blog')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + \

@@ -1,11 +1,10 @@
+import os
 from django.db.models.signals import post_delete, pre_save
 from django.dispatch import receiver
 from PIL import Image
-import os
 from django.apps import apps
 from uuid import uuid4
 from datetime import datetime
-from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
 
