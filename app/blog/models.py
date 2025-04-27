@@ -25,10 +25,12 @@ class BlogSettings(models.Model):
     #     ("fa-github", "github"),
     #     ("fa-youtube", "youtube"),
     # ]
+    avatar = models.ImageField(blank=True)
     blog_title = models.CharField(max_length=250, unique=True)
     blog_desc = models.CharField(max_length=250, unique=True)
     blog_footer = models.CharField(max_length=250, unique=True)
     #template_color=
+
 
     def __str__(self):
         return self.blog_title
@@ -160,16 +162,27 @@ class Post(models.Model):
         return results
 
     @classmethod
-    def get_prev_next_posts(cls, url_path: str, pk: int, sorted_by_pk: str) -> tuple:
-        return (
-            cls.objects.filter(
-                category__url_path=url_path,
-                status=cls.Status.PUBLISHED,
-                pk__gt=pk,
+    def get_prev_next_posts(cls, url_path: str, pk: int, option: str, sorted_by_pk: str) -> tuple:
+        if option == "next": 
+            return (
+                cls.objects.filter(
+                    category__url_path=url_path,
+                    status=cls.Status.PUBLISHED,
+                    pk__gt=pk,
+                )
+                .order_by(sorted_by_pk)
+                .first()
             )
-            .order_by(sorted_by_pk)
-            .first()
-        )
+        else:
+            return (
+                cls.objects.filter(
+                    category__url_path=url_path,
+                    status=cls.Status.PUBLISHED,
+                    pk__lt=pk,
+                )
+                .order_by(sorted_by_pk)
+                .first()
+            )
 
     @property
     def get_path_image_thumbnail(self):

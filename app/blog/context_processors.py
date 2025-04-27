@@ -14,5 +14,6 @@ def global_context(request):
         "title": blog_settings.get("blog_title", ""),
         "about": blog_settings.get("blog_desc", ""),
         "footer": blog_settings.get("blog_footer",""),
+        "avatar": blog_settings.get("avatar",""),
         "social_media": SocialMedia.objects.all()
     }

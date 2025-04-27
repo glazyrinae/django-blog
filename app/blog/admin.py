@@ -59,7 +59,7 @@ class PostAdmin(admin.ModelAdmin):
 @admin.register(BlogSettings)
 class BlogSettingsAdmin(admin.ModelAdmin):
     inlines = [SocialMediaInline]
-    list_display = ["blog_title", "blog_desc", "blog_footer"]
+    list_display = ["blog_title", "blog_desc", "blog_footer", "avatar"]
     search_fields = ["blog_title"]
 
     def has_add_permission(self, request):

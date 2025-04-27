@@ -62,14 +62,13 @@ def post_detail(request, url_path, year, month, day, post):
         publish__day=day,
         category__url_path=url_path,
     )
-
     return render(
         request,
         "blog/post/detail.html",
         {
             "post": current_post,
             "category": current_post,
-            "next_post": Post.get_prev_next_posts(url_path, current_post.pk, "pk"),
-            "previous_post": Post.get_prev_next_posts(url_path, current_post.pk, "-pk"),
+            "next_post": Post.get_prev_next_posts(url_path, current_post.pk, "next", "pk"),
+            "previous_post": Post.get_prev_next_posts(url_path, current_post.pk, "prev", "-pk"),
         },
     )
