@@ -3,7 +3,7 @@ def global_context(request):
 
     url_parts = request.path.split("/")
     url_parts = [url_part for url_part in url_parts if url_part]
-    active = url_parts[1] if len(url_parts) > 1 else "home"
+    active = url_parts[0] if len(url_parts) > 0 else "home"
     blog_settings = BlogSettings.objects.values().first()
 
     
