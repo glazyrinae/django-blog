@@ -1,6 +1,5 @@
 *.pyc
 .env
-
 app/Dockerfile
 data/
 app/blog/migrations/*
@@ -8,6 +7,4 @@ app/static/*
 app/media/*
 logs/*
 .vscode/
-docker-compose.yml
-.env
 

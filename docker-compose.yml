@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: 
+      context: ./app
+      args:
+        options: --reload
+    user: "${UID}:${GID}"
+    restart: always
+    volumes:
+      - ./app/:/usr/src/app/
+    environment:
+      - DJANGO_SETTINGS_MODULE=tiny_cms.settings
+    ports:
+      - 9000:8000
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - "5442"
+    ports:
+      - "5442:5432"
+    env_file:
+      - ./.env
+
+volumes:
+  postgres_data:
