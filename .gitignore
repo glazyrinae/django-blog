@@ -1,5 +1,4 @@
 *.pyc
-.env
 app/Dockerfile
 data/
 app/blog/migrations/*
