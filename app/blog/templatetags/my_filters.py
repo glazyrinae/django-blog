@@ -1,13 +1,51 @@
+import markdown
 from django import template
 from django.utils.safestring import mark_safe
-import markdown
+from django.utils.html import strip_tags
 
 register = template.Library()
 
 
+@register.filter
+def strip_markdown(value):
+    """Удаляет Markdown разметку из текста"""
+    if not value:
+        return ""
+    # Конвертируем Markdown в HTML
+    html_content = markdown.markdown(value)
+    # Удаляем HTML теги
+    clean_text = strip_tags(html_content)
+    return clean_text
+
+
 @register.filter(name="markdown")
-def markdown_format(text):
-    return mark_safe(markdown.markdown(text))
+def markdown_filter(value):
+    if not value:
+        return ""
+
+    extensions = [
+        "markdown.extensions.extra",
+        "markdown.extensions.codehilite",
+        "markdown.extensions.toc",
+        "markdown.extensions.nl2br",
+        "markdown.extensions.sane_lists",
+        "markdown.extensions.fenced_code",
+    ]
+
+    # Дополнительные настройки
+    extension_configs = {
+        "markdown.extensions.codehilite": {
+            "css_class": "highlight",
+        },
+        "markdown.extensions.toc": {
+            "title": "Содержание",
+        },
+    }
+
+    html = markdown.markdown(
+        value, extensions=extensions, extension_configs=extension_configs
+    )
+    return mark_safe(html)
 
 
 @register.filter(name="plural")

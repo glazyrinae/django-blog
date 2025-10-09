@@ -30,7 +30,7 @@
                             </span> -->
                         </div>
                         <div class="intro">
-                            {{ post.body|markdown|truncatewords:30|linebreaks }}
+                            {{ post.body|strip_markdown|truncatewords:30|linebreaks }}
                         </div>
                         <a class="text-link" href="{{ post.get_absolute_url }}">Читать статью &rarr;</a>
                     </div><!--//col-->

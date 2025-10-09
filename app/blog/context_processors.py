@@ -1,19 +1,29 @@
 def global_context(request):
-    from .models import Category, Post, SocialMedia, BlogSettings # пример моделей
+    from .models import Category, Post, SocialMedia, BlogSettings  # пример моделей
 
-    url_parts = request.path.split("/")
-    url_parts = [url_part for url_part in url_parts if url_part]
-    active = url_parts[0] if len(url_parts) > 0 else "home"
-    blog_settings = BlogSettings.objects.values().first()
+    # Вычисляем активный раздел
+    url_parts = request.path.strip("/").split("/")
+    active_section = url_parts[0] if url_parts else "home"
 
-    
+    # Получаем настройки блога
+    try:
+        settings = (
+            BlogSettings.objects.values(
+                "blog_title", "blog_desc", "blog_footer", "avatar"
+            ).first()
+            or {}
+        )
+    except Exception as e:
+        print(f"How exceptional! {e}")
+        settings = {}
+
     return {
         "categories": Category.objects.all(),
-        "active": active,
+        "active": active_section,
         "cnt_posts": Post.published.count(),
-        "title": blog_settings.get("blog_title", "") if blog_settings else "",
-        "about": blog_settings.get("blog_desc", "") if blog_settings else "",
-        "footer": blog_settings.get("blog_footer", "") if blog_settings else "",
-        "avatar": blog_settings.get("avatar", "") if blog_settings else "",
-        "social_media": SocialMedia.objects.all()
+        "title": settings.get("blog_title", ""),
+        "about": settings.get("blog_desc", ""),
+        "footer": settings.get("blog_footer", ""),
+        "avatar": settings.get("avatar", ""),
+        "social_media": SocialMedia.objects.all(),
     }
