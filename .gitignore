@@ -1,8 +1,8 @@
 *.pyc
 data/
 app/blog/migrations/*
-app/static/*
+app/static/admin/*
 app/media/*
+certbot/*
 logs/*
 .vscode/
-

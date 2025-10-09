@@ -11,9 +11,9 @@ def global_context(request):
         "categories": Category.objects.all(),
         "active": active,
         "cnt_posts": Post.published.count(),
-        "title": blog_settings.get("blog_title", ""),
-        "about": blog_settings.get("blog_desc", ""),
-        "footer": blog_settings.get("blog_footer",""),
-        "avatar": blog_settings.get("avatar",""),
+        "title": blog_settings.get("blog_title", "") if blog_settings else "",
+        "about": blog_settings.get("blog_desc", "") if blog_settings else "",
+        "footer": blog_settings.get("blog_footer", "") if blog_settings else "",
+        "avatar": blog_settings.get("avatar", "") if blog_settings else "",
         "social_media": SocialMedia.objects.all()
     }

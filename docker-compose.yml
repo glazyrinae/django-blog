@@ -1,33 +1,75 @@
 version: '3.8'
 
 services:
+
+  # certbot:
+  #   image: certbot/certbot
+  #   volumes:
+  #     - ./certbot/conf:/etc/letsencrypt
+  #     - ./certbot/www:/var/www/certbot
+  #   command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
+  #   depends_on:  # ← ДОБАВЛЕНО: certbot зависит от nginx
+  #     - nginx
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+      - "443:443"  # для будущего SSL
+    volumes:
+      - ./app/static:/var/www/static
+      - ./app/media:/var/www/media
+      - ./certbot/www:/var/www/certbot  # ← ВАЖНО: добавляем volume для certbot
+      - ./certbot/conf:/etc/letsencrypt  # ← для доступа к сертификатам
+    # extra_hosts:                         # ← ДОБАВЬТЕ ЭТО
+    #   - "dl-blog.ru:91.107.122.245"      # ← Ваш реальный IP
+    #   - "www.dl-blog.ru:91.107.122.245"  # ← и для www
+    depends_on:
+      - web
+    restart: unless-stopped
+    networks:
+      - app_network
+
   web:
-    build: 
+    build:
       context: ./app
-      args:
-        options: --reload
+      # args:
+      #   options: --reload
     user: "${UID}:${GID}"
     restart: always
     volumes:
       - ./app/:/usr/src/app/
     environment:
       - DJANGO_SETTINGS_MODULE=tiny_cms.settings
-    ports:
-      - 9000:8000
     env_file:
       - ./.env
     depends_on:
       - db
+    networks:
+      - app_network
+
   db:
     image: postgres:15
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: blog
+      POSTGRES_USER: blog
+      POSTGRES_PASSWORD: blog  # ← Обязательно добавьте эту строку
     expose:
       - "5442"
     ports:
       - "5442:5432"
     env_file:
       - ./.env
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   postgres_data:
+  # static_volume:
+  # media_volume:

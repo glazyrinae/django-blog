@@ -19,4 +19,9 @@ COPY . .
 ARG options
 ENV OPTIONS $options
 ENV DJANGO_SETTINGS_MODULE=simple.settings
-CMD exec gunicorn $OPTIONS --bind :8000 --workers 1 --threads 8 --timeout 0 tiny_cms.wsgi:application
+
+# RUN python manage.py collectstatic --noinput
+
+EXPOSE 8000
+
+CMD exec gunicorn --bind :8000 --workers 1 --threads 8 --timeout 0 tiny_cms.wsgi:application
