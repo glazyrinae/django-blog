@@ -1,0 +1,12 @@
+{
+  "include": ["app"],
+  "exclude": ["**/node_modules", "**/__pycache__", "**/migrations", "**/.venv"],
+  "extraPaths": [
+    "/home/andrey/projects/django-blog/app",
+    "/home/andrey/projects/django-blog/.venv/lib/python3.12/site-packages"
+  ],
+  "venvPath": "/home/andrey/projects/django-blog",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic"
+}

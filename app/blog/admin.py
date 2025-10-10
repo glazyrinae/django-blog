@@ -1,8 +1,16 @@
+import logging
+
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
-from django import forms
-from .models import Post, Category, Images, BlogSettings, SocialMedia
+from .models import Category, Images, Post, SocialMedia
 
+logger = logging.getLogger("blog")
+
+# Constants
+THUMBNAIL_SIZE = (350, 200)
+TEXT_ROWS = 20
+FONT_SIZE = 16
 
 class ImageInline(admin.StackedInline):
     model = Images
@@ -13,17 +21,14 @@ class ImageInline(admin.StackedInline):
     def thumbnail_preview(self, obj):
         if obj.thumbnail:
             return format_html(
-                '<img src="{}" width="350" height="200" />', obj.thumbnail.url
+                f'<img src="{obj.thumbnail.url}" width="{THUMBNAIL_SIZE[0]}" height="{THUMBNAIL_SIZE[1]}" />'
             )
         return "-"
-
-    thumbnail_preview.short_description = "Thumbnail Preview"
 
 
 class SocialMediaInline(admin.StackedInline):
     model = SocialMedia
     extra = 1
-    # readonly_fields = ()
     fields = ("title", "url_link")
 
 
@@ -32,6 +37,19 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ["title", "url_path", "num_item"]
     search_fields = ["title"]
     prepopulated_fields = {"url_path": ("title",)}
+
+    def save_model(self, request, obj, form, change):
+        """Log category admin actions."""
+        action = "updated" if change else "created"
+        logger.info(f"Admin {request.user.username} {action} category: {obj.title}")
+        super().save_model(request, obj, form, change)
+
+    def delete_model(self, request, obj):
+        """Log category deletion."""
+        logger.warning(
+            f"Admin {request.user.username} deleted category: {obj.title}"
+        )
+        super().delete_model(request, obj)
 
 
 @admin.register(Post)
@@ -49,27 +67,21 @@ class PostAdmin(admin.ModelAdmin):
         form = super().get_form(request, obj, **kwargs)
         form.base_fields["body"].widget.attrs.update(
             {
-                "rows": "20",
-                "style": "width: 100%; font-family: monospace; font-size: 16px",
+                "rows": TEXT_ROWS,
+                "style": f"width: 100%; font-family: monospace; font-size: {FONT_SIZE}px",
             }
         )
         return form
 
+    def save_model(self, request, obj, form, change):
+        """Log post admin actions."""
+        action = "updated" if change else "created"
+        logger.info(
+            f"Admin {request.user.username} {action} post: '{obj.title}' (status: {obj.status})"
+        )
+        super().save_model(request, obj, form, change)
 
-@admin.register(BlogSettings)
-class BlogSettingsAdmin(admin.ModelAdmin):
-    inlines = [SocialMediaInline]
-    list_display = ["blog_title", "blog_desc", "blog_footer", "avatar"]
-    search_fields = ["blog_title"]
-
-    def has_add_permission(self, request):
-        return BlogSettings.objects.count() == 0
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        form.base_fields["blog_desc"].widget = forms.Textarea(attrs={
-            'rows': 6,
-            'cols': 60,
-            'style': 'font-family: monospace;'  # дополнительные стили
-        })
-        return form
+    def delete_model(self, request, obj):
+        """Log post deletion."""
+        logger.warning(f"Admin {request.user.username} deleted post: '{obj.title}'")
+        super().delete_model(request, obj)

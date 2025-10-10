@@ -14,16 +14,19 @@
         <script defer src="{% static "fontawesome/js/all.min.js" %}"></script>
         <!-- Theme CSS -->
         <link id="theme-style" rel="stylesheet" href="{% static "css/theme-1.css" %}">
+        {% block css %}
+        {% endblock %}
     </head>
     <body>
-        {% include "header.html" %}
+        {% include "base/_header.html" %}
         <div class="main-wrapper">
             {% block content %}
             {% endblock %}
-            {% include "footer.html" %}
+            {% include "base/_footer.html" %}
         </div><!--//main-wrapper-->
-        <!-- Javascript -->
+    {% block js %}
         <script src="{% static "plugins/popper.min.js" %}"></script>
         <script src="{% static "plugins/bootstrap/js/bootstrap.min.js" %}"></script>
+    {% endblock %}
     </body>
 </html>

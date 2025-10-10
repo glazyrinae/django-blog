@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-
   # certbot:
   #   image: certbot/certbot
   #   volumes:
@@ -11,36 +8,40 @@ services:
   #   depends_on:  # ← ДОБАВЛЕНО: certbot зависит от nginx
   #     - nginx
 
-  nginx:
-    build: ./nginx
-    ports:
-      - "80:80"
-      - "443:443"  # для будущего SSL
-    volumes:
-      - ./app/static:/var/www/static
-      - ./app/media:/var/www/media
-      - ./certbot/www:/var/www/certbot  # ← ВАЖНО: добавляем volume для certbot
-      - ./certbot/conf:/etc/letsencrypt  # ← для доступа к сертификатам
-    # extra_hosts:                         # ← ДОБАВЬТЕ ЭТО
-    #   - "dl-blog.ru:91.107.122.245"      # ← Ваш реальный IP
-    #   - "www.dl-blog.ru:91.107.122.245"  # ← и для www
-    depends_on:
-      - web
-    restart: unless-stopped
-    networks:
-      - app_network
+  # nginx:
+  #   build: ./nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"  # для будущего SSL
+  #   volumes:
+  #     - ./app/static:/var/www/static
+  #     - ./app/media:/var/www/media
+  #     - ./certbot/www:/var/www/certbot  # ← ВАЖНО: добавляем volume для certbot
+  #     - ./certbot/conf:/etc/letsencrypt  # ← для доступа к сертификатам
+  #   # extra_hosts:                         # ← ДОБАВЬТЕ ЭТО
+  #   #   - "dl-blog.ru:91.107.122.245"      # ← Ваш реальный IP
+  #   #   - "www.dl-blog.ru:91.107.122.245"  # ← и для www
+  #   depends_on:
+  #     - web
+  #   restart: unless-stopped
+  #   networks:
+  #     - app_network
 
   web:
     build:
-      context: ./app
-      # args:
-      #   options: --reload
+      context: ./deploy
+      dockerfile: ./Dockerfile
     user: "${UID}:${GID}"
+    working_dir: /app
     restart: always
     volumes:
-      - ./app/:/usr/src/app/
-    environment:
-      - DJANGO_SETTINGS_MODULE=tiny_cms.settings
+      - ./app:/app
+      - ./media:/app/media
+      - ./logs:/app/logs
+
+    command: gunicorn --bind 0.0.0.0:8000 --workers 1 --threads 8 --timeout 0 tiny_cms.wsgi:application
+    ports:
+      - 9000:8000
     env_file:
       - ./.env
     depends_on:
@@ -51,11 +52,12 @@ services:
   db:
     image: postgres:15
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - ./deploy/db_data:/var/lib/postgresql/data/
+      - ./deploy/db_backup:/backup
     environment:
-      POSTGRES_DB: blog
-      POSTGRES_USER: blog
-      POSTGRES_PASSWORD: blog  # ← Обязательно добавьте эту строку
+      - SQL_USER
+      - SQL_PASSWORD
+      - SQL_DATABASE
     expose:
       - "5442"
     ports:
@@ -71,5 +73,3 @@ networks:
 
 volumes:
   postgres_data:
-  # static_volume:
-  # media_volume:

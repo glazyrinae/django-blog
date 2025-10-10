@@ -1,0 +1,59 @@
+<header class="header text-center">
+    <h1 class="blog-name pt-lg-4 mb-0">
+        <a class="no-text-decoration" href="/">{{title}}</a>
+    </h1>
+
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navigation"
+            aria-controls="navigation"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div id="navigation" class="collapse navbar-collapse flex-column">
+            <div class="profile-section pt-3 pt-lg-0">
+                <img
+                    class="profile-image mb-3 rounded-circle mx-auto"
+                    src="{{ MEDIA_URL }}{{ avatar }}"
+                    alt="image"
+                />
+
+                <div class="bio mb-3">
+                    {{about|safe}}<a href="about.html"
+                        >Find out more about me</a
+                    >
+                </div>
+                <!--//bio-->
+                <ul class="social-list list-inline py-3 mx-auto">
+                    {% for sm in social_media %}
+                    <li class="list-inline-item">
+                        <a href="{{sm.url_link}}" target="_blank"
+                            ><i class="fab {{sm.title}} fa-fw"></i
+                        ></a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <!--//social-list-->
+                <hr />
+            </div>
+            <!--//profile-section-->
+
+            {% include "base/_menu.html" %}
+
+            <div class="my-2 my-md-3">
+                <a
+                    class="btn btn-primary"
+                    href="https://themes.3rdwavemedia.com/"
+                    target="_blank"
+                    >Get in Touch</a
+                >
+            </div>
+        </div>
+    </nav>
+</header>

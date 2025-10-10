@@ -1,0 +1,30 @@
+{% load my_filters %}
+<section class="cta-section theme-bg-light py-5">
+    <div class="container text-center single-col-max-width">
+        <h2 class="heading">В данном блоге доступно {{ cnt_posts|plural }} на разные темы</h2>
+        {% if search %}
+            <div class="intro">По запросу нашлось {{ cnt|plural }}</div>
+        {% else %}
+            <div class="intro">Для конкретной темы или вопроса воспользуйся формой поиска</div>
+        {% endif %}
+        <div class="single-form-max-width pt-3 mx-auto">
+            <form class="signup-form row g-2 g-lg-2 align-items-center"
+                  action="{% url 'blog:post_list' %}">
+                <div class="col-12 col-md-9">
+                    <input type="text"
+                           id="query"
+                           name="search"
+                           class="form-control me-md-1 semail"
+                           placeholder="Что вас интересует?"
+                           value="{{ search }}" />
+                </div>
+                <div class="col-12 col-md-2">
+                    <button type="submit" class="btn btn-primary">Найти</button>
+                </div>
+            </form>
+            <!--//signup-form-->
+        </div>
+        <!--//single-form-max-width-->
+    </div>
+    <!--//container-->
+</section>

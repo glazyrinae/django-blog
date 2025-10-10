@@ -1,0 +1,17 @@
+<nav class="blog-nav nav nav-justified my-5">
+    {% if page.has_previous %}
+    <a
+        class="nav-link-next nav-item nav-link rounded"
+        href="?page={{ page.previous_page_number }}"
+    >
+        Previous<i class="arrow-prev fas fa-long-arrow-alt-left"></i
+    ></a>
+    {% endif %} {% if page.has_next %}
+    <a
+        class="nav-link-next nav-item nav-link rounded"
+        href="?page={{ page.next_page_number }}"
+    >
+        Next<i class="arrow-next fas fa-long-arrow-alt-right"></i
+    ></a>
+    {% endif %}
+</nav>
