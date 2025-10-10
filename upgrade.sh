@@ -1,28 +1,45 @@
-#!/usr/bin/env /bin/bash
-# settings
-set -e
+#!/bin/bash
+set -euo pipefail
 
-export $(cat .env | grep RUN_MODE)
+ACTION=${1:-start}
+ENV=${2:-dev}
 
-(   # проверяем есть ли блокировка на файл
-    flock -n 9 || { echo "upgrade.sh уже запущен"; exit 1; }
-
-    # update git repo
-    if [ $RUN_MODE != "dev" ]; then
-        git -C ./smart_bps pull
+load_env() {
+    local env_file=$1
+    if [[ -f "$env_file" ]]; then
+        set -a
+        source "$env_file"
+        set +a
+    else
+        echo "Файл $env_file не найден" >&2
+        exit 1
     fi
-    git pull
+}
 
-    dc="docker compose -f docker-compose.yml -f docker-compose.$RUN_MODE.yml -f docker-compose.local.yml --env-file .env"
+compose_dev_files=(-f docker-compose.yml)
+if [[ -f docker-compose.local.yml ]]; then
+    compose_dev_files+=(-f docker-compose.local.yml)
+fi
 
-    # rebuild images, containers (if image change only)
-    ${dc} up --build --remove-orphans -d
-    # ${dc} stop queue
-
-    ${dc} exec back /app/manage.py syncdb
-    ${dc} kill -s HUP back
-
-    # ${dc} start queue
-    ${dc} exec front npm run build
-
-) 9>./upgrade_sh.lock
+case "${ACTION} ${ENV}" in
+  "start dev")
+    load_env ".env.dev"
+    docker-compose --env-file .env.dev "${compose_dev_files[@]}" up -d
+    ;;
+  "stop dev")
+    load_env ".env.dev"
+    docker-compose --env-file .env.dev "${compose_dev_files[@]}" down
+    ;;
+  "start prod")
+    load_env ".env.prod"
+    docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d
+    ;;
+  "stop prod")
+    load_env ".env.prod"
+    docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml down
+    ;;
+  *)
+    echo "Использование: ./upgrade.sh [start|stop] [dev|prod]"
+    exit 1
+    ;;
+esac

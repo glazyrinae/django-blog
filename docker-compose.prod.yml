@@ -1,0 +1,38 @@
+services:
+  web:
+    command: gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 60 tiny_cms.wsgi:application
+    env_file:
+      - ./.env.prod
+    volumes:
+      - ./media:/app/media
+      - ./logs:/app/logs
+    environment:
+      DJANGO_SETTINGS_MODULE: tiny_cms.config.prod
+
+  nginx:
+    build: ./nginx
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./app/static:/var/www/static
+      - ./media:/var/www/media
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    networks:
+      - app_network
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - nginx
+    command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
+
+  db:
+    env_file:
+      - ./.env.prod

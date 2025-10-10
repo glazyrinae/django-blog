@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django import forms
 
-from blog.models import BlogSettings
-from app.blog.models import SocialMedia
+from blog.models import BlogSettings, SocialMedia
 
 # Constants
 FORM_ATTRS = {

@@ -7,6 +7,7 @@ from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from settings.models import BlogSettings
 from taggit.managers import TaggableManager
 
 logger = logging.getLogger("blog")

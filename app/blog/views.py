@@ -23,7 +23,6 @@ def post_list(request, category: str = ""):
 
             if not cat_type:
                 logger.warning(f"Category not found: {category}")
-                # Continue with default behavior or raise 404
                 posts = Post.published.all()
             else:
                 q_post = Post.objects.select_related("category").filter(

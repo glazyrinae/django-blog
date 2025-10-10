@@ -1,49 +1,18 @@
 services:
-  # certbot:
-  #   image: certbot/certbot
-  #   volumes:
-  #     - ./certbot/conf:/etc/letsencrypt
-  #     - ./certbot/www:/var/www/certbot
-  #   command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
-  #   depends_on:  # ← ДОБАВЛЕНО: certbot зависит от nginx
-  #     - nginx
-
-  # nginx:
-  #   build: ./nginx
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"  # для будущего SSL
-  #   volumes:
-  #     - ./app/static:/var/www/static
-  #     - ./app/media:/var/www/media
-  #     - ./certbot/www:/var/www/certbot  # ← ВАЖНО: добавляем volume для certbot
-  #     - ./certbot/conf:/etc/letsencrypt  # ← для доступа к сертификатам
-  #   # extra_hosts:                         # ← ДОБАВЬТЕ ЭТО
-  #   #   - "dl-blog.ru:91.107.122.245"      # ← Ваш реальный IP
-  #   #   - "www.dl-blog.ru:91.107.122.245"  # ← и для www
-  #   depends_on:
-  #     - web
-  #   restart: unless-stopped
-  #   networks:
-  #     - app_network
-
   web:
     build:
       context: ./deploy
       dockerfile: ./Dockerfile
-    user: "${UID}:${GID}"
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
     working_dir: /app
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./app:/app
       - ./media:/app/media
       - ./logs:/app/logs
-
-    command: gunicorn --bind 0.0.0.0:8000 --workers 1 --threads 8 --timeout 0 tiny_cms.wsgi:application
-    ports:
-      - 9000:8000
+    command: python manage.py runserver 0.0.0.0:8000
     env_file:
-      - ./.env
+      - ./.env.dev
     depends_on:
       - db
     networks:
@@ -52,24 +21,17 @@ services:
   db:
     image: postgres:15
     volumes:
-      - ./deploy/db_data:/var/lib/postgresql/data/
+      - ./deploy/db_data:/var/lib/postgresql/data
       - ./deploy/db_backup:/backup
     environment:
-      - SQL_USER
-      - SQL_PASSWORD
-      - SQL_DATABASE
-    expose:
-      - "5442"
-    ports:
-      - "5442:5432"
+      POSTGRES_USER: ${SQL_USER}
+      POSTGRES_PASSWORD: ${SQL_PASSWORD}
+      POSTGRES_DB: ${SQL_DATABASE}
     env_file:
-      - ./.env
+      - ./.env.dev
     networks:
       - app_network
 
 networks:
   app_network:
     driver: bridge
-
-volumes:
-  postgres_data:

@@ -28,4 +28,4 @@ class BlogSettings(models.Model):
     def save(self, *args, **kwargs):
         """Override save to log settings changes."""
         if self.pk:
-            logger.info(f"Updating blog
+            logger.info(f"Updating blog settings (ID: {self.pk})") 

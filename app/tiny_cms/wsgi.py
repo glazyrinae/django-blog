@@ -11,7 +11,7 @@ import os
 import django
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tiny_cms.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tiny_cms.configs.prod')
 
 application = get_wsgi_application()
 
