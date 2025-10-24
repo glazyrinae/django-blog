@@ -30,6 +30,7 @@ media_root/
 
 # Media files
 app/media/*
+media/*
 
 # Migrations
 app/blog/migrations/*

@@ -155,20 +155,14 @@ def generate_thumbnail_on_save(sender, instance, **kwargs):
     """
     logger.info(f"Processing image for post: {instance.post.title}")
 
-    # Handle file updates for existing instances
-    if instance.pk:
-        try:
+    try:
+        # Generate thumbnail if image exists
+        if not instance.image:
+            logger.debug("No image to process, skipping thumbnail generation")
+            return
+        if instance.pk:
             old_instance = sender.objects.get(pk=instance.pk)
             cleanup_old_files(instance, old_instance)
-        except sender.DoesNotExist:
-            logger.warning(f"Instance with pk={instance.pk} was deleted during processing")
-
-    # Generate thumbnail if image exists
-    if not instance.image:
-        logger.debug("No image to process, skipping thumbnail generation")
-        return
-
-    try:
         # Generate unique filename
         original_name = instance.image.name
         instance.image.name = generate_unique_filename(instance.image.name)

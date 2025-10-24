@@ -1,0 +1,64 @@
+{% extends "base/_main.html" %}
+
+{% block title %}Backpropagation Failure 🔧{% endblock %}
+
+{% block content %}
+
+{% include "base/_search.html" %}
+
+<div class="container">
+    <div class="error-content">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                
+                <div class="mb-4">
+                    <div style="font-size: 6rem;">
+                        <span>📈</span>
+                        <span>❌</span>
+                        <span>📉</span>
+                    </div>
+                    <h2 class="text-muted">Loss Function Exploded!</h2>
+                </div>
+
+                <h1 class="display-5 fw-bold text-danger mb-4">
+                    {% if status_code == 404 %}
+                        Error 404: Underfitting Detected
+                    {% else %}
+                        Error 500: Overfitting in Production
+                    {% endif %}
+                </h1>
+
+                <div class="alert alert-info mb-4">
+                    <h4>🚨 Technical Debugging Info:</h4>
+                    <p class="mb-1"><strong>Batch Size:</strong> 1 frustrated user</p>
+                    <p class="mb-1"><strong>Learning Rate:</strong> Too high for this situation</p>
+                    <p class="mb-1"><strong>Epoch:</strong> We're working on it!</p>
+                    {% if error %}
+                    <p class="mb-0 mt-2"><strong>Gradient:</strong> {{ error|truncatechars:100 }}</p>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+    {{ block.super }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script>
+        VANTA.NET({
+            el: ".main-wrapper",
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            scale: 1.00,
+            scaleMobile: 1.00,
+            color: '#5FCB71',
+            backgroundColor: '#fafafa'
+        });
+        
+    </script>
+{% endblock %}

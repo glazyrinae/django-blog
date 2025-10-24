@@ -1,6 +1,7 @@
 import logging
 
-from blog.models import Category, Post, SocialMedia
+from blog.models import Category, Post
+from settings.models import SocialMedia
 
 from .models import BlogSettings
 

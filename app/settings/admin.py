@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 
-from blog.models import BlogSettings, SocialMedia
+from .models import BlogSettings, SocialMedia
 
 # Constants
 FORM_ATTRS = {
@@ -45,3 +45,15 @@ class BlogSettingsAdmin(admin.ModelAdmin):
             )
 
         return form
+
+    def save_formset(self, request, form, formset, change):
+        """
+        Save the parent instance before saving the formset.
+        """
+        if formset.model == SocialMedia:
+            # First, save the parent object (BlogSettings)
+            form.instance.save()
+            # Then, save the inline objects (SocialMedia)
+            formset.save()
+        else:
+            super().save_formset(request, form, formset, change)

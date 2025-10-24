@@ -3,7 +3,7 @@ import logging
 from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Category, Images, Post, SocialMedia
+from .models import Category, Images, Post
 
 logger = logging.getLogger("blog")
 
@@ -14,7 +14,7 @@ FONT_SIZE = 16
 
 class ImageInline(admin.StackedInline):
     model = Images
-    extra = 1
+    extra = 0
     readonly_fields = ("thumbnail_preview",)
     fields = ("image", "thumbnail_preview", "image_type")
 
@@ -25,11 +25,6 @@ class ImageInline(admin.StackedInline):
             )
         return "-"
 
-
-class SocialMediaInline(admin.StackedInline):
-    model = SocialMedia
-    extra = 1
-    fields = ("title", "url_link")
 
 
 @admin.register(Category)

@@ -24,14 +24,14 @@ services:
     networks:
       - app_network
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    depends_on:
-      - nginx
-    command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
+  # certbot:
+  #   image: certbot/certbot
+  #   volumes:
+  #     - ./certbot/conf:/etc/letsencrypt
+  #     - ./certbot/www:/var/www/certbot
+  #   depends_on:
+  #     - nginx
+  #   command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
 
   db:
     env_file:
