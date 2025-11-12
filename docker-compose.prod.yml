@@ -1,14 +1,19 @@
 services:
   web:
-    command: gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 60 tiny_cms.wsgi:application
+    command: gunicorn tiny_cms.wsgi:application -c /app/gunicorn.conf.py
     env_file:
       - ./.env.prod
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
     volumes:
       - ./media:/app/media
       - ./logs:/app/logs
-    environment:
-      DJANGO_SETTINGS_MODULE: tiny_cms.config.prod
-
+      - ./deploy/gunicorn.conf.py:/app/gunicorn.conf.py:ro
+    restart: unless-stopped
+  
   nginx:
     build: ./nginx
     depends_on:
@@ -23,16 +28,19 @@ services:
       - ./certbot/conf:/etc/letsencrypt
     networks:
       - app_network
-
-  # certbot:
-  #   image: certbot/certbot
-  #   volumes:
-  #     - ./certbot/conf:/etc/letsencrypt
-  #     - ./certbot/www:/var/www/certbot
-  #   depends_on:
-  #     - nginx
-  #   command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
+    restart: unless-stopped
+  
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - nginx
+    command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
+    restart: unless-stopped
 
   db:
     env_file:
       - ./.env.prod
+    restart: unless-stopped

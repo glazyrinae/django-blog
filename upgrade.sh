@@ -32,11 +32,11 @@ case "${ACTION} ${ENV}" in
     ;;
   "start prod")
     load_env ".env.prod"
-    docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d
+    docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.local.yml up -d
     ;;
   "stop prod")
     load_env ".env.prod"
-    docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml down
+    docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.local.yml down
     ;;
   *)
     echo "Использование: ./upgrade.sh [start|stop] [dev|prod]"
