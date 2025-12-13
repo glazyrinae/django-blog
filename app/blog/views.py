@@ -48,7 +48,7 @@ def handle_blog_exceptions(view_func):
 
 
 @handle_blog_exceptions
-def post_list(request, category: str = None):
+def post_list(request, category: str = ""):
     """
     Display list of posts or single page based on category and search.
     """
@@ -56,6 +56,7 @@ def post_list(request, category: str = None):
     context = {}
 
     if category:
+        logger.info(f"Загружаю категорию {category}")
         return _handle_category_view(request, category, template_name, context)
 
     if search_query := validate_search_query(request.GET.get("search", "")):
@@ -63,7 +64,10 @@ def post_list(request, category: str = None):
             return render(
                 request,
                 "base/_error.html",
-                {"error": "No published posts found for this category", "status_code": 423},
+                {
+                    "error": "No published posts found for this category",
+                    "status_code": 423,
+                },
                 status=423,
             )
         return _handle_search_view(request, search_query, template_name, context)
@@ -91,6 +95,12 @@ def post_detail(request, url_path: str, year: int, month: int, day: int, post: s
 
     context = {
         "post": post_obj,
+        "previous_post": Post.get_prev_next_posts(
+            post_obj.category.url_path, post_obj.pk, "prev", "pk"
+        ),
+        "next_post": Post.get_prev_next_posts(
+            post_obj.category.url_path, post_obj.pk, "next", "pk"
+        ),
         "category": post_obj.category.title,
     }
 
@@ -132,9 +142,8 @@ def _handle_category_view(request, category: str, template_name: str, context: d
             }
         )
         template_name = "blog/post/detail.html"
-
+    logger.info(f"Загрузил шаблон {template_name} {posts}")
     return _handle_main_list_view(request, template_name, context)
-
 
 
 @handle_blog_exceptions
@@ -154,8 +163,9 @@ def _handle_search_view(request, search_query: str, template_name: str, context:
 @handle_blog_exceptions
 def _handle_main_list_view(request, template_name: str, context: dict):
     """Handle main posts list with pagination."""
-    posts = Post.published.select_related("category", "author").prefetch_related(
-        "images"
+    posts = context.get(
+        "posts",
+        Post.published.select_related("category", "author").prefetch_related("images"),
     )
 
     paginator = Paginator(posts, POSTS_PER_PAGE)
@@ -169,4 +179,5 @@ def _handle_main_list_view(request, template_name: str, context: dict):
         posts_page = paginator.page(paginator.num_pages)
 
     context["posts"] = posts_page
+    logger.info(context)
     return render(request, template_name, context)
