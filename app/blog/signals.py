@@ -112,7 +112,7 @@ def create_thumbnail(image_file, max_size: tuple = THUMBNAIL_SIZE) -> BytesIO:
         raise ValueError(f"Failed to process image: {str(e)}") from e
 
 
-def cleanup_old_files(instance, old_instance) -> None:
+def cleanup_old_files(instance, old_instance) -> bool:
     """
     Remove old image and thumbnail files when they are replaced.
 
@@ -122,6 +122,10 @@ def cleanup_old_files(instance, old_instance) -> None:
     """
     logger.debug("Cleaning up old files")
 
+    if instance.image and old_instance.image and instance.image == old_instance.image:
+        logger.info(f"Old and New image are same: {old_instance.image.path}")
+        return False
+    
     # Cleanup old main image
     if instance.image and old_instance.image and instance.image != old_instance.image:
         logger.info(f"Removing old image: {old_instance.image.path}")
@@ -135,6 +139,7 @@ def cleanup_old_files(instance, old_instance) -> None:
     ):
         logger.info(f"Removing old thumbnail: {old_instance.thumbnail.path}")
         remove_file_if_exists(old_instance.thumbnail.path)
+    return True
 
 
 @receiver(pre_save, sender=Images)
@@ -162,7 +167,8 @@ def generate_thumbnail_on_save(sender, instance, **kwargs):
             return
         if instance.pk:
             old_instance = sender.objects.get(pk=instance.pk)
-            cleanup_old_files(instance, old_instance)
+            if cleanup_old_files(instance, old_instance) is False:
+                return
         # Generate unique filename
         original_name = instance.image.name
         instance.image.name = generate_unique_filename(instance.image.name)

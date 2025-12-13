@@ -11,6 +11,19 @@
         <meta name="author" content="Xiaoying Riley at 3rd Wave Media">
         <link rel="shortcut icon" href="{% static "favicon.ico" %}">
         <!-- FontAwesome JS-->
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+        <script id="MathJax-script" async 
+                src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+        </script>
+        <script>
+            MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                    processEscapes: true
+                }
+            };
+        </script>
         <script defer src="{% static "fontawesome/js/all.min.js" %}"></script>
         <!-- Theme CSS -->
         <link id="theme-style" rel="stylesheet" href="{% static "css/theme-1.css" %}">

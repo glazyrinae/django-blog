@@ -90,7 +90,7 @@ def post_detail(request, url_path: str, year: int, month: int, day: int, post: s
     )
 
     # Проверяем соответствие категории в URL
-    if post_obj.category.url_path != url_path:
+    if post_obj and post_obj.category.url_path != url_path:
         raise Http404("Post not found in this category")
 
     context = {
@@ -111,7 +111,7 @@ def post_detail(request, url_path: str, year: int, month: int, day: int, post: s
 def _handle_category_view(request, category: str, template_name: str, context: dict):
     """Handle category-specific views."""
     category_obj = get_object_or_404(Category, url_path=category)
-
+    logger.info(f"Открываю категорию для постов - {category}")
     posts_query = (
         Post.objects.select_related("category", "author")
         .prefetch_related("images")
