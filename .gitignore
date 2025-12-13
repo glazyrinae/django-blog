@@ -85,5 +85,3 @@ Thumbs.db
 *.bak
 *.swp
 
-./deploy/db_data
-./deploy/db_backup
