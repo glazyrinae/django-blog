@@ -7,7 +7,19 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+# Для production
+CSRF_TRUSTED_ORIGINS = [
+    'https://dl-blog.ru',
+    'https://www.dl-blog.ru',
+]
 
+# Или для разработки + production
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000', 
+    'https://dl-blog.ru',
+    'https://www.dl-blog.ru',
+]
 # Logging Configuration
 # https://docs.djangoproject.com/en/5.1/topics/logging/
 

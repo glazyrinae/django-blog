@@ -19,28 +19,37 @@ services:
     build: ./nginx
     depends_on:
       - web
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./app/static:/var/www/static
       - ./media:/var/www/media
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
+    labels:
+      - "traefik.enable=true"
+      
+      # ТОЛЬКО HTTPS - убираем HTTP роутер
+      - "traefik.http.routers.dl-blog.rule=Host(`dl-blog.ru`, `www.dl-blog.ru`)"
+      - "traefik.http.routers.dl-blog.entrypoints=websecure"
+      - "traefik.http.routers.dl-blog.tls.certresolver=letsencrypt"
+      
+      # Автоматический редирект HTTP → HTTPS (глобально в Traefik)
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      
+      # Указываем порт nginx
+      - "traefik.http.services.dl-blog.loadbalancer.server.port=80"
     networks:
+      - traefik-public
       - app_network
     restart: unless-stopped
-  
-  # certbot:
-  #   image: certbot/certbot
-  #   volumes:
-  #     - ./certbot/conf:/etc/letsencrypt
-  #     - ./certbot/www:/var/www/certbot
-  #   depends_on:
-  #     - nginx
-  #   command: certonly --webroot -w /var/www/certbot --force-renewal -d dl-blog.ru -d www.dl-blog.ru --email railot116@gmail.com --agree-tos
+
 
   db:
     env_file:
       - ./.env.prod
     restart: unless-stopped
+
+networks:
+  traefik-public:
+    external: true
