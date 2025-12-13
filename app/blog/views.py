@@ -56,6 +56,7 @@ def post_list(request, category: str = ""):
     context = {}
 
     if category:
+        logger.info(f"Загружаю категорию {category}")
         return _handle_category_view(request, category, template_name, context)
 
     if search_query := validate_search_query(request.GET.get("search", "")):
@@ -94,6 +95,12 @@ def post_detail(request, url_path: str, year: int, month: int, day: int, post: s
 
     context = {
         "post": post_obj,
+        "previous_post": Post.get_prev_next_posts(
+            post_obj.category.url_path, post_obj.pk, "prev", "pk"
+        ),
+        "next_post": Post.get_prev_next_posts(
+            post_obj.category.url_path, post_obj.pk, "next", "pk"
+        ),
         "category": post_obj.category.title,
     }
 
@@ -135,7 +142,7 @@ def _handle_category_view(request, category: str, template_name: str, context: d
             }
         )
         template_name = "blog/post/detail.html"
-
+    logger.info(f"Загрузил шаблон {template_name} {posts}")
     return _handle_main_list_view(request, template_name, context)
 
 
@@ -156,8 +163,9 @@ def _handle_search_view(request, search_query: str, template_name: str, context:
 @handle_blog_exceptions
 def _handle_main_list_view(request, template_name: str, context: dict):
     """Handle main posts list with pagination."""
-    posts = Post.published.select_related("category", "author").prefetch_related(
-        "images"
+    posts = context.get(
+        "posts",
+        Post.published.select_related("category", "author").prefetch_related("images"),
     )
 
     paginator = Paginator(posts, POSTS_PER_PAGE)
@@ -171,4 +179,5 @@ def _handle_main_list_view(request, template_name: str, context: dict):
         posts_page = paginator.page(paginator.num_pages)
 
     context["posts"] = posts_page
+    logger.info(context)
     return render(request, template_name, context)

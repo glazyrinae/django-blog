@@ -54,7 +54,7 @@ class SocialMedia(models.Model):
 class Category(models.Model):
 
     TYPE_POSTS = "posts"  # ← ЭТО КОНСТАНТА
-    TYPE_PAGE = "page"    # ← И ЭТО ТОЖЕ КОНСТАНТА
+    TYPE_PAGE = "page"  # ← И ЭТО ТОЖЕ КОНСТАНТА
 
     TYPE_CATEGORY = [
         (TYPE_POSTS, "Посты"),
@@ -193,7 +193,9 @@ class Images(models.Model):
     ]
 
     image = models.ImageField(blank=True)
-    thumbnail = models.ImageField(upload_to="%Y/%m/%d/thumbnails", blank=True, null=True)
+    thumbnail = models.ImageField(
+        upload_to="%Y/%m/%d/thumbnails", blank=True, null=True
+    )
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="images")
 
     image_type = models.CharField(
