@@ -116,6 +116,7 @@ def _handle_category_view(request, category: str, template_name: str, context: d
         Post.objects.select_related("category", "author")
         .prefetch_related("images")
         .filter(category__url_path=category, status=Post.Status.PUBLISHED)
+        .order_by("pk")
     )
 
     if category_obj.type_category == Category.TYPE_POSTS:
