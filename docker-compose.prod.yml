@@ -21,7 +21,7 @@ services:
       - web
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./app/static:/var/www/static
+      - ./app/staticfiles:/var/www/static 
       - ./media:/var/www/media
     labels:
       - "traefik.enable=true"
