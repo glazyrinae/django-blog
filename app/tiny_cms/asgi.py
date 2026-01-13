@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tiny_cms.configs.prod')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tiny_cms.configs.dev")
 
 application = get_asgi_application()

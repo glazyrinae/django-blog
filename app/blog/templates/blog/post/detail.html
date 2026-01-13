@@ -7,7 +7,7 @@
 {% endif %} 
 {% endblock %} 
 {% load my_filters%} 
-{%block content %}
+{% block content %}
 <article class="blog-post px-3 py-5 p-md-5">
     <div class="container single-col-max-width">
         <header class="blog-post-header">
@@ -55,4 +55,9 @@
         </nav>
     </div>
 </article>
+{% load comments_tags %}
+
+{% comments_widget post show_form=True show_stats=True %}
+
 {% endblock %}
+
