@@ -1,0 +1,15 @@
+FROM postgres:15
+
+
+ARG APP_UID=1001
+ARG APP_GID=1001
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends pgbackrest ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PGBACKREST_CONFIG_PATH=/etc/pgbackrest
+ENV PGBACKREST_LOG_PATH=/var/log/pgbackrest
+
+RUN mkdir -p /etc/pgbackrest /var/log/pgbackrest /tmp/pgbackrest \
+    && chown -R 999:999 /etc/pgbackrest /var/log/pgbackrest /tmp/pgbackrest

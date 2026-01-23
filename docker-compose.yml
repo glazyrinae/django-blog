@@ -18,18 +18,50 @@ services:
       - app_network
 
   db:
-    image: postgres:15
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile.postgres
+    user: "${APP_UID:-1001}:${APP_GID:-1001}"
     volumes:
+      - ./deploy/db_data/postgresql.conf:/var/lib/postgresql/data/postgresql.conf:ro
       - ./deploy/db_data:/var/lib/postgresql/data
       - ./deploy/db_backup:/backup
+      - ./deploy/socket:/var/run/postgresql
+      - ./pgbackrest/config:/etc/pgbackrest:ro
+      - ./pgbackrest/logs:/var/log/pgbackrest
+      - ./tmp_pgbackrest:/tmp/pgbackrest
     environment:
       POSTGRES_USER: ${SQL_USER}
       POSTGRES_PASSWORD: ${SQL_PASSWORD}
       POSTGRES_DB: ${SQL_DATABASE}
+      PGDATA: /var/lib/postgresql/data
     env_file:
       - ./.env.dev
     networks:
       - app_network
+
+  pgbackrest:
+    build:
+      context: ./pgbackrest
+      dockerfile: ./DockerpgBackRestfile
+      args:
+        APP_UID: ${APP_UID:-1001}
+        APP_GID: ${APP_GID:-1001}
+    user: "${APP_UID:-1001}:${APP_GID:-1001}"
+    environment:
+      HOME: /home/pgbackrest
+      PGBACKREST_CONFIG_PATH: /etc/pgbackrest
+      PGREST_SSH_FIX_PERMS: "0"
+    volumes:
+      - ./pgbackrest/.pgpass:/home/pgbackrest/.pgpass:ro
+      - ./pgbackrest/config:/etc/pgbackrest
+      - ./pgbackrest/logs:/var/log/pgbackrest
+      - ./deploy/db_data:/var/lib/postgresql/data:ro
+      - ./deploy/socket:/var/run/postgresql:ro
+      - ./tmp_pgbackrest:/tmp/pgbackrest
+    command:
+      - --stanza=remote-db
+      - check
 
 networks:
   app_network:
