@@ -184,6 +184,10 @@ class Post(models.Model):
             .first()
         )
 
+    @classmethod
+    def get_status_choices(cls):
+        return cls.Status.choices
+
 
 class Images(models.Model):
     IMAGE_TYPE_CHOICES = [

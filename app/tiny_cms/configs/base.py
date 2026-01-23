@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "blog.apps.BlogConfig",
     "settings.apps.SettingsConfig",
     "comments.apps.СommentsConfig",
+    "search.apps.SearchConfig",
     "templates",
     "taggit",
 ]

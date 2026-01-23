@@ -1,0 +1,107 @@
+<!-- search/templates/search/search_panel.html -->
+{% if config %}
+<div class="search-panel search-panel-{{ config.position }}" 
+     id="search-panel-{{ config.id }}"
+     data-config-id="{{ config.id }}"
+     data-content-type="{{ config.content_type.id }}">
+    
+    {% if config.position == 'modal' %}
+    <!-- Модальное окно -->
+    <button type="button" class="btn btn-primary search-modal-trigger" 
+            data-bs-toggle="modal" data-bs-target="#searchModal{{ config.id }}">
+        <i class="bi bi-search"></i> Поиск
+    </button>
+    
+    <div class="modal fade" id="searchModal{{ config.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Поиск</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% include "search/search_form.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Обычная панель -->
+    <div class="search-panel-content">
+        {% include "search/search_form.html" %}
+    </div>
+    {% endif %}
+    
+</div>
+
+<style>
+    .search-panel-top {
+        padding: 15px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .search-panel-left {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 300px;
+        height: 100vh;
+        background: white;
+        border-right: 1px solid #dee2e6;
+        padding: 20px;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+    
+    .search-panel-right {
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 300px;
+        height: 100vh;
+        background: white;
+        border-left: 1px solid #dee2e6;
+        padding: 20px;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+    
+    .search-panel-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+        border-top: 1px solid #dee2e6;
+        padding: 15px;
+        z-index: 1000;
+    }
+    
+    .search-results {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        background: white;
+        display: none;
+    }
+    
+    .search-result-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+    }
+    
+    .search-result-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .search-loading {
+        display: none;
+        text-align: center;
+        padding: 10px;
+    }
+</style>
+{% endif %}

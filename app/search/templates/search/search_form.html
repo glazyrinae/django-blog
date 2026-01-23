@@ -1,0 +1,214 @@
+{% load static %}
+<!-- search/templates/search/search_form.html -->
+<form id="{{ form_id }}" class="search-form" 
+      data-content-type="{{ config.content_type.id }}"
+      data-config-id="{{ config.id }}"
+      data-results-limit="{{ config.results_limit }}">
+    
+    <div class="input-group mb-3">
+        <input type="text" 
+               class="form-control search-input" 
+               placeholder="{{ config.placeholder }}"
+               name="q"
+               aria-label="Поиск">
+        <button class="btn btn-outline-secondary search-button" type="button">
+            <i class="bi bi-search"></i>
+        </button>
+    </div>
+    
+    <!-- Дополнительные поля -->
+    <div class="search-fields mb-3">
+        {% for field in fields %}
+        <div class="mb-2 search-field-{{ field.field_type }}" 
+             data-field-name="{{ field.field_name }}"
+             data-field-type="{{ field.field_type }}">
+            
+            {% if field.field_type == 'text' %}
+            <label class="form-label">{{ field.label }}</label>
+            <input type="text" 
+                   class="form-control" 
+                   name="{{ field.field_name }}"
+                   placeholder="{{ field.placeholder|default:'' }}"
+                   {% if field.is_required %}required{% endif %}>
+            
+            {% elif field.field_type == 'checkbox' %}
+            <div class="form-check">
+                <input class="form-check-input" 
+                       type="checkbox" 
+                       name="{{ field.field_name }}"
+                       id="field_{{ field.id }}">
+                <label class="form-check-label" for="field_{{ field.id }}">
+                    {{ field.label }}
+                </label>
+            </div>
+            
+            {% elif field.field_type == 'radio' %}
+            <label class="form-label">{{ field.label }}</label>
+            <div class="search-dynamic-radio" data-field-id="{{ field.id }}">
+                <!-- Динамически загрузится через JS -->
+            </div>
+            
+            {% elif field.field_type == 'select' %}
+            <label class="form-label mb-2">{{ field.label }}</label>
+            
+                {% if field.is_multiple %}
+                <!-- МНОЖЕСТВЕННЫЙ ВЫБОР -->
+                <select class="form-control select2-multiple" 
+                        name="{{ field.field_name }}[]"
+                        data-field-type="select"
+                        data-field-id="{{ field.id }}"
+                        multiple
+                        data-placeholder="Выберите варианты...">
+                    <!-- Опции загрузятся через AJAX -->
+                </select>
+                
+                {% else %}
+                <!-- ОДИНОЧНЫЙ ВЫБОР -->
+                <select class="form-control select2-multiple" 
+                        data-field-type="select"
+                        data-field-id="{{ field.id }}"
+                        name="{{ field.field_name }}"
+                        data-placeholder="Выберите...">
+                    <option></option>
+                    <!-- Опции загрузятся через AJAX -->
+                </select>
+                {% endif %}
+            
+            {% elif field.field_type == 'number' %}
+            <label class="form-label">{{ field.label }}</label>
+            <input type="number" 
+                   class="form-control" 
+                   name="{{ field.field_name }}"
+                   {% if field.min_value is not None %}min="{{ field.min_value }}"{% endif %}
+                   {% if field.max_value is not None %}max="{{ field.max_value }}"{% endif %}
+                   {% if field.step is not None %}step="{{ field.step }}"{% endif %}
+                   placeholder="{{ field.placeholder|default:'' }}">
+            
+{% elif field.field_type == 'range' %}
+<div class="mb-4 range-slider-wrapper" 
+     data-field-name="{{ field.field_name }}"
+     data-min="{{ field.min_value|default:0 }}"
+     data-max="{{ field.max_value|default:100 }}"
+     data-step="{{ field.step|default:1 }}">
+    
+    <label class="form-label">{{ field.label }}</label>
+    
+    <!-- Контейнер для слайдера -->
+    <div class="slider-container mb-3">
+        <!-- Сам слайдер (ДОЛЖЕН БЫТЬ ПУСТОЙ DIV) -->
+        <div class="slider" id="slider-{{ field.id }}"></div>
+        
+        <!-- Отображение значений -->
+        <!-- <div class="d-flex justify-content-between mt-2">
+            <span class="badge bg-light text-dark slider-value-min">{{ field.min_value|default:0 }}</span>
+            <span class="badge bg-light text-dark slider-value-max">{{ field.max_value|default:100 }}</span>
+        </div> -->
+        
+        <!-- Поля для ручного ввода -->
+        <div class="row mt-3">
+            <div class="col">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">От</span>
+                    <input type="number" 
+                           class="form-control slider-min-input" 
+                           min="{{ field.min_value|default:0 }}"
+                           max="{{ field.max_value|default:100 }}"
+                           step="{{ field.step|default:1 }}">
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">До</span>
+                    <input type="number" 
+                           class="form-control slider-max-input" 
+                           min="{{ field.min_value|default:0 }}"
+                           max="{{ field.max_value|default:100 }}"
+                           step="{{ field.step|default:1 }}">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Скрытые поля -->
+    <input type="hidden" name="{{ field.field_name }}_min" class="slider-hidden-min">
+    <input type="hidden" name="{{ field.field_name }}_max" class="slider-hidden-max">
+</div>
+
+            {% elif field.field_type == 'range1' %}
+            <label class="form-label">{{ field.label }}</label>
+            <div class="row">
+                <div class="col">
+                    <input type="number" 
+                           class="form-control" 
+                           name="{{ field.field_name }}_min"
+                           placeholder="От"
+                           {% if field.min_value is not None %}min="{{ field.min_value }}"{% endif %}>
+                </div>
+                <div class="col">
+                    <input type="number" 
+                           class="form-control" 
+                           name="{{ field.field_name }}_max"
+                           placeholder="До"
+                           {% if field.max_value is not None %}max="{{ field.max_value }}"{% endif %}>
+                </div>
+            </div>
+            
+            {% elif field.field_type == 'date' %}
+            <label class="form-label">{{ field.label }}</label>
+            <input type="date" 
+                   class="form-control" 
+                   name="{{ field.field_name }}"
+                   placeholder="{{ field.placeholder|default:'' }}">
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Искать
+        </button>
+        
+        <button type="button" class="btn btn-outline-secondary search-clear">
+            <i class="bi bi-x-circle"></i> Очистить
+        </button>
+    </div>
+</form>
+
+<!-- Результаты поиска -->
+<div class="search-results mt-3" id="results-{{ form_id }}">
+    <div class="search-loading">
+        <div class="spinner-border spinner-border-sm" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <span class="ms-2">Поиск...</span>
+    </div>
+    <div class="search-results-list"></div>
+</div>
+
+{% block css %}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
+    <style>
+
+/* Для отладки - добавьте границу чтобы видеть контейнер */
+.slider-container {
+    padding: 15px;
+    border-radius: 5px;
+}
+.d-flex justify-content-between mt-2 {
+    display: none !important;
+}
+/* Основные стили для слайдера */
+.noUi-connect {
+    background: #5FCB71; /* Цвет заполненной части */
+}
+    </style>
+{% endblock %}
+
+{% block js %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{% static 'search/js/search.js' %}"></script>
+{% endblock %}

@@ -24,6 +24,7 @@ from django.conf import settings
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("comments/", include("comments.urls", namespace="comments")),
+    path("search/", include("search.urls", namespace="api_search")),
     path("", include("blog.urls", namespace="blog")),
 ]
 
