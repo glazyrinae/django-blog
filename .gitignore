@@ -87,3 +87,4 @@ Thumbs.db
 
 deploy/db_data/
 deploy/db_backup/
+deploy/socket/

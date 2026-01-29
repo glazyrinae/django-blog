@@ -1,4 +1,4 @@
-{% load static %}
+{% load static sekizai_tags %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -27,6 +27,7 @@
         <!-- Theme CSS -->
          <!-- Select2 CSS -->
         <link id="theme-style" rel="stylesheet" href="{% static "css/theme-1.css" %}">
+        {% render_block "css" %}
         <!-- Локальные -->
         {% block css %}
         {% endblock %}
