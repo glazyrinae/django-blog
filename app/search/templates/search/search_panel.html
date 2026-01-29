@@ -1,4 +1,5 @@
 
+{% load sekizai_tags %}
 {% if config %}
 <div class="search-panel search-panel-{{ config.position }}" 
      id="search-panel-{{ config.id }}"
@@ -36,7 +37,7 @@
 </div>
 
 
-{% block css %}
+{% addtoblock "css" %}
 <style>
     .search-panel-top {
         padding: 15px;
@@ -106,5 +107,5 @@
         padding: 10px;
     }
 </style>
-{% endblock %}
+{% endaddtoblock %}
 {% endif %}

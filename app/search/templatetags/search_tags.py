@@ -11,6 +11,7 @@ def render_search_panel(context, config_name=None, content_type=None):
     """Рендерит панель поиска"""
 
     request = context.get("request")
+    base_context = context.flatten()
 
     # Ищем конфигурацию
     config = None
@@ -43,9 +44,12 @@ def render_search_panel(context, config_name=None, content_type=None):
     # Генерируем ID для формы
     form_id = f"search-form-{config.id}"
 
-    return {
-        "config": config,
-        "fields": fields,
-        "form_id": form_id,
-        "request": request,
-    }
+    base_context.update(
+        {
+            "config": config,
+            "fields": fields,
+            "form_id": form_id,
+            "request": request,
+        }
+    )
+    return base_context

@@ -28,6 +28,7 @@
          <!-- Select2 CSS -->
         <link id="theme-style" rel="stylesheet" href="{% static "css/theme-1.css" %}">
         {% render_block "css" %}
+        {% render_block "js_header" %}
         <!-- Локальные -->
         {% block css %}
         {% endblock %}
@@ -39,10 +40,10 @@
             {% endblock %}
             {% include "base/_footer.html" %}
         </div><!--//main-wrapper-->
+    {% render_block "js_footer" %}
     {% block js %}
         <script src="{% static "plugins/popper.min.js" %}"></script>
         <script src="{% static "plugins/bootstrap/js/bootstrap.min.js" %}"></script>
     {% endblock %}
-    
     </body>
 </html>
