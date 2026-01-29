@@ -497,6 +497,12 @@ class UniversalSearch {
         // Обработка фокуса в модальных окнах
         const modal = this.form.closest('.modal');
         if (!modal) return;
+
+        this._lastActiveElementBeforeModal = null;
+
+        $(modal).on('show.bs.modal', () => {
+            this._lastActiveElementBeforeModal = document.activeElement;
+        });
         
         // При открытии модалки - фокус на первое поле
         $(modal).on('shown.bs.modal', () => {
@@ -514,9 +520,29 @@ class UniversalSearch {
             }, 100);
         });
         
-        // При закрытии модалки - закрываем все dropdowns Select2
+        // При закрытии модалки: закрываем Select2 и убираем фокус ДО того,
+        // как Bootstrap поставит aria-hidden, иначе браузер ругается.
         $(modal).on('hide.bs.modal', () => {
-            $('.select2-dropdown').remove();
+            $(this.form)
+                .find('.select2-single, .select2-multiple')
+                .each(function () {
+                    const $select = $(this);
+                    if ($select.data('select2')) {
+                        $select.select2('close');
+                    }
+                });
+
+            const active = document.activeElement;
+            if (active && modal.contains(active)) {
+                active.blur();
+            }
+        });
+
+        $(modal).on('hidden.bs.modal', () => {
+            const el = this._lastActiveElementBeforeModal;
+            if (el && typeof el.focus === 'function') {
+                el.focus();
+            }
         });
     }
     
