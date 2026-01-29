@@ -1,4 +1,4 @@
-<!-- search/templates/search/search_panel.html -->
+
 {% if config %}
 <div class="search-panel search-panel-{{ config.position }}" 
      id="search-panel-{{ config.id }}"
@@ -35,6 +35,8 @@
     
 </div>
 
+
+{% block css %}
 <style>
     .search-panel-top {
         padding: 15px;
@@ -104,4 +106,5 @@
         padding: 10px;
     }
 </style>
+{% endblock %}
 {% endif %}

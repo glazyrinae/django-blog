@@ -50,9 +50,9 @@ services:
       - ./.env.prod
     restart: unless-stopped
 
-  pgbackrest:
-    env_file:
-      - ./.env.prod
+  #pgbackrest:
+  #  env_file:
+  #    - ./.env.prod
 
 networks:
   traefik-public:

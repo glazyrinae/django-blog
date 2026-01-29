@@ -9,6 +9,7 @@ class UniversalSearch {
         this.contentTypeId = this.form.dataset.contentType;
         this.resultsLimit = this.form.dataset.resultsLimit || 10;
         this.initSelect2();
+        this.initDataPicker();
         this.initNoUISliders();
         this.init();
     }
@@ -56,6 +57,16 @@ class UniversalSearch {
         this.setupModalFocus();
     }
     
+
+    initDataPicker() {
+        $('#dateRange').datepicker({
+            format: "dd.mm.yyyy",
+            language: "ru",
+            autoclose: true,
+            todayHighlight: true
+        });
+    }
+
     initNoUISliders() {
         console.log('Initializing noUiSliders...');
         

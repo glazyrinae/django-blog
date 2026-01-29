@@ -17,11 +17,13 @@ services:
     networks:
       - app_network
 
+  #docker-compose exec -T db pg_restore -U postgres -d postgres -F c --clean < data.bk
+  #docker-compose exec -T db_old pg_dump -U postgres -d postgres -F c > data.bk
   db:
     build:
       context: .
       dockerfile: ./deploy/Dockerfile.postgres
-    user: "${APP_UID:-1001}:${APP_GID:-1001}"
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
     volumes:
       - ./deploy/db_data/postgresql.conf:/var/lib/postgresql/data/postgresql.conf:ro
       - ./deploy/db_data:/var/lib/postgresql/data
@@ -40,28 +42,31 @@ services:
     networks:
       - app_network
 
-  pgbackrest:
-    build:
-      context: ./pgbackrest
-      dockerfile: ./DockerpgBackRestfile
-      args:
-        APP_UID: ${APP_UID:-1001}
-        APP_GID: ${APP_GID:-1001}
-    user: "${APP_UID:-1001}:${APP_GID:-1001}"
-    environment:
-      HOME: /home/pgbackrest
-      PGBACKREST_CONFIG_PATH: /etc/pgbackrest
-      PGREST_SSH_FIX_PERMS: "0"
-    volumes:
-      - ./pgbackrest/.pgpass:/home/pgbackrest/.pgpass:ro
-      - ./pgbackrest/config:/etc/pgbackrest
-      - ./pgbackrest/logs:/var/log/pgbackrest
-      - ./deploy/db_data:/var/lib/postgresql/data:ro
-      - ./deploy/socket:/var/run/postgresql:ro
-      - ./tmp_pgbackrest:/tmp/pgbackrest
-    command:
-      - --stanza=remote-db
-      - check
+  # pgbackrest:
+  #   build:
+  #     context: ./pgbackrest
+  #     dockerfile: ./DockerpgBackRestfile
+  #     args:
+  #       APP_UID: ${APP_UID:-1001}
+  #       APP_GID: ${APP_GID:-1001}
+  #   environment:
+  #     HOME: /home/pgbackrest
+  #     PGBACKREST_CONFIG_PATH: /etc/pgbackrest
+  #     PGREST_SSH_FIX_PERMS: "1"
+  #   volumes:
+  #     - ./pgbackrest/.pgpass:/home/pgbackrest/.pgpass:ro
+  #     - ./pgbackrest/config:/etc/pgbackrest
+  #     - ./pgbackrest/logs:/var/log/pgbackrest
+  #     - ./pgbackrest/.ssh:/config/pgbackrest-ssh:ro
+  #     - ./deploy/db_data:/var/lib/postgresql/data:ro
+  #     - ./deploy/socket:/var/run/postgresql:ro
+  #     - ./tmp_pgbackrest:/tmp/pgbackrest
+  #   ports:
+  #     - "${PGBACKREST_SSH_PORT:-2022}:22"
+  #   command:
+  #     - sshd
+  #     - -D
+  #     - -e
 
 networks:
   app_network:

@@ -1,7 +1,8 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y \
-    curl build-essential pkg-config git ninja-build meson python3 \
+    curl build-essential pkg-config git openssh-client openssh-server rsync gosu \
+    ninja-build meson python3 \
     libssl-dev libxml2-dev liblz4-dev libzstd-dev libyaml-dev libbz2-dev \
     libpq-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -15,20 +16,28 @@ RUN groupadd -g ${APP_GID} pgbackresthost \
     && chown ${APP_UID}:${APP_GID} /home/pgbackrest
 
 
-# сборка pgBackRest 2.57
+# сборка pgBackRest из официального репозитория
 WORKDIR /tmp
 
-ARG PGBACKREST_VERSION=2.57.0
+ARG PGBACKREST_GIT_REF=release/2.57
 
-COPY pgbackrest-release-${PGBACKREST_VERSION}.tar.gz /tmp/pgbackrest.tar.gz
-
-RUN tar -xf /tmp/pgbackrest.tar.gz -C /tmp \
-    && cd /tmp/pgbackrest-release-${PGBACKREST_VERSION} \
+RUN git clone --depth 1 --branch ${PGBACKREST_GIT_REF} https://github.com/pgbackrest/pgbackrest.git /tmp/pgbackrest \
+    && cd /tmp/pgbackrest \
     && meson setup build --prefix=/usr \
     && ninja -C build \
     && ninja -C build install \
     && cd / && rm -rf /tmp/pgbackrest*
 
+# default SSH setup for runtime key mounts and daemon
+RUN mkdir -p /home/pgbackrest/.ssh /var/run/sshd \
+    && chown ${APP_UID}:${APP_GID} /home/pgbackrest/.ssh \
+    && chmod 700 /home/pgbackrest/.ssh \
+    && sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config \
+    && echo 'PermitRootLogin no' >> /etc/ssh/sshd_config \
+    && echo 'AllowUsers pgbackresthost' >> /etc/ssh/sshd_config \
+    && echo 'AuthorizedKeysFile /home/pgbackrest/.ssh/authorized_keys' >> /etc/ssh/sshd_config
 
+COPY entrypoint.sh /usr/local/bin/pgbackrest-entrypoint.sh
+RUN chmod +x /usr/local/bin/pgbackrest-entrypoint.sh
 
-ENTRYPOINT ["pgbackrest"]
+ENTRYPOINT ["/usr/local/bin/pgbackrest-entrypoint.sh"]
