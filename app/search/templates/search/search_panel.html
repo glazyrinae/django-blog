@@ -27,6 +27,71 @@
         </div>
     </div>
     
+    {% elif config.position == 'left' or config.position == 'right' or config.position == 'top' or config.position == 'bottom' %}
+    {% with offcanvas_id="searchOffcanvas"|add:config.id|stringformat:"s" %}
+    {% if config.position == 'left' %}
+    <div class="offcanvas offcanvas-start"
+         tabindex="-1"
+         id="{{ offcanvas_id }}"
+         aria-labelledby="{{ offcanvas_id }}Label"
+         data-bs-scroll="true"
+         data-bs-backdrop="false"
+         data-bs-keyboard="false">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
+        </div>
+        <div class="offcanvas-body">
+            {% include "search/search_form.html" %}
+        </div>
+    </div>
+    {% elif config.position == 'right' %}
+    <div class="offcanvas offcanvas-end"
+         tabindex="-1"
+         id="{{ offcanvas_id }}"
+         aria-labelledby="{{ offcanvas_id }}Label"
+         data-bs-scroll="true"
+         data-bs-backdrop="false"
+         data-bs-keyboard="false">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
+        </div>
+        <div class="offcanvas-body">
+            {% include "search/search_form.html" %}
+        </div>
+    </div>
+    {% elif config.position == 'top' %}
+    <div class="offcanvas offcanvas-top"
+         tabindex="-1"
+         id="{{ offcanvas_id }}"
+         aria-labelledby="{{ offcanvas_id }}Label"
+         data-bs-scroll="true"
+         data-bs-backdrop="false"
+         data-bs-keyboard="false">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
+        </div>
+        <div class="offcanvas-body">
+            {% include "search/search_form.html" %}
+        </div>
+    </div>
+    {% else %}
+    <div class="offcanvas offcanvas-bottom"
+         tabindex="-1"
+         id="{{ offcanvas_id }}"
+         aria-labelledby="{{ offcanvas_id }}Label"
+         data-bs-scroll="true"
+         data-bs-backdrop="false"
+         data-bs-keyboard="false">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
+        </div>
+        <div class="offcanvas-body">
+            {% include "search/search_form.html" %}
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+
     {% else %}
     <!-- Обычная панель -->
     <div class="search-panel-content">
@@ -36,76 +101,28 @@
     
 </div>
 
+{% addtoblock "js_footer" %}
+<script>
+  (function () {
+    function autoShowSearchOffcanvas() {
+      if (!window.bootstrap || !window.bootstrap.Offcanvas) return;
 
-{% addtoblock "css" %}
-<style>
-    .search-panel-top {
-        padding: 15px;
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
+      document.querySelectorAll('.search-panel .offcanvas').forEach(function (el) {
+        var instance = window.bootstrap.Offcanvas.getOrCreateInstance(el, {
+          backdrop: false,
+          scroll: true,
+          keyboard: false
+        });
+        instance.show();
+      });
     }
-    
-    .search-panel-left {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 300px;
-        height: 100vh;
-        background: white;
-        border-right: 1px solid #dee2e6;
-        padding: 20px;
-        z-index: 1000;
-        overflow-y: auto;
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', autoShowSearchOffcanvas);
+    } else {
+      autoShowSearchOffcanvas();
     }
-    
-    .search-panel-right {
-        position: fixed;
-        right: 0;
-        top: 0;
-        width: 300px;
-        height: 100vh;
-        background: white;
-        border-left: 1px solid #dee2e6;
-        padding: 20px;
-        z-index: 1000;
-        overflow-y: auto;
-    }
-    
-    .search-panel-bottom {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: white;
-        border-top: 1px solid #dee2e6;
-        padding: 15px;
-        z-index: 1000;
-    }
-    
-    .search-results {
-        max-height: 400px;
-        overflow-y: auto;
-        border: 1px solid #dee2e6;
-        border-radius: 0.375rem;
-        background: white;
-        display: none;
-    }
-    
-    .search-result-item {
-        padding: 10px;
-        border-bottom: 1px solid #eee;
-        cursor: pointer;
-    }
-    
-    .search-result-item:hover {
-        background: #f8f9fa;
-    }
-    
-    .search-loading {
-        display: none;
-        text-align: center;
-        padding: 10px;
-    }
-</style>
+  })();
+</script>
 {% endaddtoblock %}
 {% endif %}
