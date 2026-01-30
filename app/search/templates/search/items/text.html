@@ -1,6 +1,36 @@
-<label class="form-label">{{ field.label }}</label>
-<input type="text" 
-        class="form-control" 
-        name="{{ field.field_name }}"
-        placeholder="{{ field.placeholder|default:'' }}"
-        {% if field.is_required %}required{% endif %}>
+{% addtoblock "css" %}
+<style>
+    .search-field-accordion .accordion-button:focus { box-shadow: none; }
+    .search-field-accordion .accordion-button:not(.collapsed) {
+        color: inherit;
+        background-color: transparent;
+        box-shadow: none;
+    }
+</style>
+{% endaddtoblock %}
+
+<div class="accordion accordion-flush mb-2 search-field-accordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="text-heading-{{ field.id }}">
+            <button class="accordion-button collapsed py-2"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#text-collapse-{{ field.id }}"
+                    aria-expanded="false"
+                    aria-controls="text-collapse-{{ field.id }}">
+                {{ field.label }}
+            </button>
+        </h2>
+        <div id="text-collapse-{{ field.id }}"
+             class="accordion-collapse collapse"
+             aria-labelledby="text-heading-{{ field.id }}">
+            <div class="accordion-body pt-2">
+                <input type="text" 
+                        class="form-control" 
+                        name="{{ field.field_name }}"
+                        placeholder="{{ field.placeholder|default:'' }}"
+                        {% if field.is_required %}required{% endif %}>
+            </div>
+        </div>
+    </div>
+</div>
