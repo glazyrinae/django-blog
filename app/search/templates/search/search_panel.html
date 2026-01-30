@@ -72,9 +72,9 @@
           return Math.round(header.getBoundingClientRect().height);
         }
 
-        function getHalfAvailableHeight() {
-          var available = Math.max(200, window.innerHeight - getTopHeaderHeight());
-          return Math.round(available / 2);
+        function getAvailableHeightForTopBottom(placement) {
+          var topOffset = placement === 'top' ? getTopHeaderHeight() : 0;
+          return Math.max(200, window.innerHeight - topOffset);
         }
 
         function resetMainWrapperPadding() {
@@ -170,7 +170,15 @@
             }
 
             if (placement === 'top' || placement === 'bottom') {
-              el.style.height = getHalfAvailableHeight() + 'px';
+              // Показываем панель полностью, но не выходим за доступную высоту viewport.
+              // Если контент больше — появится скролл внутри offcanvas (стандартное поведение Bootstrap).
+              el.style.height = 'auto';
+              var availableH = getAvailableHeightForTopBottom(placement);
+              // Для верхней панели оставляем часть экрана под основной контент,
+              // иначе "док" может визуально перекрыть всю страницу.
+              var maxH = placement === 'top' ? Math.max(200, availableH - 200) : availableH;
+              var desiredH = Math.min(el.scrollHeight, maxH);
+              el.style.height = desiredH + 'px';
             }
 
             if (placement === 'start' || placement === 'end') {
