@@ -111,12 +111,22 @@
         }
 
         function movePanelContent(panelRoot, toMobile) {
-          var inner = panelRoot.querySelector('[data-search-panel-inner="1"]');
-          if (!inner) return;
+          function getMobilePanelForRoot() {
+            return (
+              panelRoot.querySelector('.search-panel-mobile[data-search-panel-mobile="1"]') ||
+              document.querySelector('.search-panel-mobile[data-search-panel-root-id="' + panelRoot.id + '"]')
+            );
+          }
 
-          var mobileHost = panelRoot.querySelector('[data-search-panel-mobile-host="1"]');
+          var mobilePanel = getMobilePanelForRoot();
+          var mobileHost = mobilePanel ? mobilePanel.querySelector('[data-search-panel-mobile-host="1"]') : null;
           var desktopHost = panelRoot.querySelector('[data-search-panel-desktop-host="1"]');
           if (!mobileHost || !desktopHost) return;
+
+          var inner =
+            panelRoot.querySelector('[data-search-panel-inner="1"]') ||
+            (mobilePanel ? mobilePanel.querySelector('[data-search-panel-inner="1"]') : null);
+          if (!inner) return;
 
           if (toMobile) {
             if (inner.parentElement !== mobileHost) mobileHost.appendChild(inner);
@@ -135,7 +145,9 @@
             var wrapper = document.querySelector('.main-wrapper');
             document.querySelectorAll('.search-panel').forEach(function (panelRoot) {
               movePanelContent(panelRoot, true);
-              var mobilePanel = panelRoot.querySelector('.search-panel-mobile[data-search-panel-mobile="1"]');
+              var mobilePanel =
+                panelRoot.querySelector('.search-panel-mobile[data-search-panel-mobile="1"]') ||
+                document.querySelector('.search-panel-mobile[data-search-panel-root-id="' + panelRoot.id + '"]');
               if (!mobilePanel || !wrapper) return;
               if (mobilePanel.parentElement === wrapper && mobilePanel === wrapper.firstElementChild) return;
               wrapper.insertBefore(mobilePanel, wrapper.firstChild);
@@ -206,7 +218,7 @@
 
     {% with offcanvas_id="searchOffcanvas"|add:config.id|stringformat:"s" %}
     {# Mobile: static panel in normal flow #}
-    <div class="card d-lg-none mb-3 search-panel-mobile" data-search-panel-mobile="1">
+    <div class="card d-lg-none mb-3 search-panel-mobile" data-search-panel-mobile="1" data-search-panel-root-id="search-panel-{{ config.id }}">
         <div class="card-header">
             Поиск
         </div>
