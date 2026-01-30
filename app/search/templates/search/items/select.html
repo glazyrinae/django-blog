@@ -11,7 +11,7 @@
 
 <label class="form-label mb-2">{{ field.label }}</label>
 <!-- ОДИНОЧНЫЙ ВЫБОР -->
-<select class="form-control select2-multiple" 
+<select class="form-control {{ field.field_type }}" 
         data-field-type="select"
         data-field-id="{{ field.id }}"
         name="{{ field.field_name }}"

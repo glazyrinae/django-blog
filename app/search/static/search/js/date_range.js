@@ -26,4 +26,13 @@
             $start.datepicker('setEndDate', e.date);
         });
     });
+    // $('.date-range').each(function(index) {
+    //     const start = $(this).find('.date-start').val();
+    //     const end = $(this).find('.date-end').val();
+        
+    //     if (start || end) {
+    //         hasData = true;
+    //         result += `<p>Диапазон ${index + 1}: <strong>${start || 'не выбрано'}</strong> - <strong>${end || 'не выбрано'}</strong></p>`;
+    //     }
+    // });
 }());

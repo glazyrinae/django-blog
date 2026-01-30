@@ -120,31 +120,130 @@ class UniversalSearch {
     getFormData() {
         const formData = new FormData(this.form);
         const data = {};
-        
-        // Собираем данные формы
-        for (let [key, value] of formData.entries()) {
-            if (value.trim() !== '') {
+
+        // Вспомогательная функция для парсинга значений
+        const parseValue = (val) => {
+            if (!val?.trim()) return null;
+            const num = Number(val);
+            return isNaN(num) ? val : num;
+        };
+
+        const parseDate = (val) => {
+            if (!val?.trim()) return null;
+            const str = val.trim();
+
+            // Проверяем формат DD.MM.YYYY с помощью регулярного выражения
+            const dateMatch = str.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+            
+            if (dateMatch) {
+                const [, day, month, year] = dateMatch;
+                // Создаём дату в UTC, чтобы избежать проблем с часовыми поясами
+                const date = new Date(Date.UTC(year, month - 1, day));
+                
+                // Проверяем, что дата корректна (например, не 32.13.2027)
+                if (
+                    date.getUTCFullYear() == year &&
+                    date.getUTCMonth() == month - 1 &&
+                    date.getUTCDate() == day
+                ) {
+                    // Форматируем как YYYY-MM-DD
+                    const pad = (n) => n.toString().padStart(2, '0');
+                    return `${year}-${pad(month)}-${pad(day)}`;
+                }
+            }
+
+            // Если не дата — пробуем число
+            const num = Number(str);
+            if (!isNaN(num)) {
+                return num;
+            }
+
+            // Иначе возвращаем строку
+            return str;
+        };
+
+        // Собираем все поля из формы
+        for (const [key, value] of formData.entries()) {
+            if (value.trim()) {
                 data[key] = value;
             }
         }
-        
-        // Обрабатываем range поля
+
+        // Обрабатываем rangeFields
         const rangeFields = this.form.querySelectorAll('[data-field-type="range"]');
-        rangeFields.forEach(field => {
-            const fieldName = field.dataset.fieldName;
-            const minInput = this.form.querySelector(`[name="${fieldName}_min"]`);
-            const maxInput = this.form.querySelector(`[name="${fieldName}_max"]`);
-            
-            if (minInput && minInput.value) data[`${fieldName}_min`] = minInput.value;
-            if (maxInput && maxInput.value) data[`${fieldName}_max`] = maxInput.value;
-        });
         
+        rangeFields.forEach(field => {
+            let fieldName = field.dataset.fieldName;
+            let minKey = `${fieldName}_min`;
+            let maxKey = `${fieldName}_max`;
+
+            // Извлекаем и парсим значения
+            let minValue = data[minKey] !== undefined ? parseValue(data[minKey]) : null;
+            let maxValue = data[maxKey] !== undefined ? parseValue(data[maxKey]) : null;
+
+            // Если есть хотя бы одно значение, создаем массив и удаляем исходные поля
+            if (minValue !== null || maxValue !== null) {
+                delete data[minKey];
+                delete data[maxKey];
+                data[fieldName] = [minValue, maxValue];
+            }
+        });
+
+        // Обрабатываем dateRangeFields
+        const dateRangeFields = this.form.querySelectorAll('[data-field-type="date"]');
+        
+        dateRangeFields.forEach(field => {
+            let fieldName = field.dataset.fieldName;
+            let minKey = `${fieldName}_min`;
+            let maxKey = `${fieldName}_max`;
+
+            // Извлекаем и парсим значения
+            let minValue = data[minKey] !== undefined ? parseDate(data[minKey]) : null;
+            let maxValue = data[maxKey] !== undefined ? parseDate(data[maxKey]) : null;
+
+            // Если есть хотя бы одно значение, создаем массив и удаляем исходные поля
+            if (minValue !== null || maxValue !== null) {
+                delete data[minKey];
+                delete data[maxKey];
+                data[fieldName] = [minValue, maxValue];
+            }
+        });
+
+        // Собираем все поля из формы (включая select)
+        for (const [key, value] of formData.entries()) {
+            if (value.trim()) {
+                // Если ключ уже существует — значит, multiple select
+                if (data[key] !== undefined) {
+                    if (Array.isArray(data[key])) {
+                        data[key].push(value);
+                    } else {
+                        alert('2')
+                        data[key] = [data[key], value];
+                    }
+                } else {
+                    alert('3')
+                    data[key] = value;
+                }
+            }
+        }
+
+        // // Преобразуем значения: парсим и приводим multiple к массиву
+        // for (const key in data) {
+        //     if (Array.isArray(data[key])) {
+        //         // Multiple select: парсим каждое значение
+        //         data[key] = data[key].filter(v => typeof v === 'string' && v.trim() !== '');
+        //     } else {
+        //         // Single select или input
+        //         data[key] = parseValue(data[key]);
+        //     }
+        // }
+
         return data;
     }
     
     async performSearch() {
         const data = this.getFormData();
-        
+        console.log('Search data:', data);
         // Показываем загрузку
         this.showLoading();
         this.showResults();

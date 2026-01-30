@@ -30,10 +30,10 @@
     // }
     
     // Функция для выполнения поиска
-    function performSearch() {
-        // Ваша логика поиска здесь
-        console.log('Выполняем поиск...');
-    }
+    // function performSearch() {
+    //     // Ваша логика поиска здесь
+    //     console.log('Выполняем поиск...');
+    // }
     
     // Инициализация Select2 с настройками для модальных окон
     const select2Options = {
@@ -45,7 +45,7 @@
     };
     
     // Одиночный выбор
-    $(form).find('.select2-single').each(function() {
+    $(form).find('.select').each(function() {
         $(this).select2({
             ...select2Options,
             placeholder: $(this).data('placeholder') || 'Выберите...'
@@ -53,7 +53,7 @@
     });
     
     // Множественный выбор
-    $(form).find('.select2-multiple').each(function() {
+    $(form).find('.select_multiple').each(function() {
         $(this).select2({
             ...select2Options,
             placeholder: $(this).data('placeholder') || 'Выберите варианты...'
@@ -61,7 +61,7 @@
     });
     
     // Событие изменения
-    $(form).on('change', '.select2-single, .select2-multiple', function() {
+    $(form).on('change', '.select, .select_multiple', function() {
         // if (shouldAutoSearch()) {
         //     performSearch();
         // }
@@ -82,7 +82,7 @@
         $(modal).on('shown.bs.modal', function() {
             // Даем время на отрисовку Select2
             setTimeout(function() {
-                const firstSelect = form.querySelector('.select2-selection');
+                const firstSelect = form.querySelector('.select');
                 if (firstSelect) {
                     $(firstSelect).focus();
                 } else {
@@ -97,7 +97,7 @@
         // При закрытии модалки: закрываем Select2 и убираем фокус
         $(modal).on('hide.bs.modal', function() {
             $(form)
-                .find('.select2-single, .select2-multiple')
+                .find('.select, .select_multiple')
                 .each(function() {
                     const $select = $(this);
                     if ($select.data('select2')) {

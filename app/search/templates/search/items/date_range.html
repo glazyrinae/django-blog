@@ -36,7 +36,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.ru.min.js"></script>
     <script src="{% static 'search/js/date_range.js' %}"></script>
 {% endaddtoblock %}
-<div class="date-range-group" data-range-index="{{ field.id }}">
+<div class="date-range-group" 
+    data-range-index="{{ field.id }}" 
+    data-field-type="{{ field.field_type }}">
     <div class="date-range-header">
         <span class="range-title">{{ field.label }}</span>
         <!-- <span class="remove-range" onclick="removeDateRange({index})">&times;</span> -->
