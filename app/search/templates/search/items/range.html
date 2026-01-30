@@ -1,4 +1,4 @@
-{% load sekizai_tags %}
+{% load sekizai_tags static %}
 
 {% addtoblock "css" %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
@@ -19,6 +19,7 @@
 {% endaddtoblock %}
 {% addtoblock "js_footer" %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+    <script src="{% static 'search/js/range.js' %}"></script>
 {% endaddtoblock %}
 
 

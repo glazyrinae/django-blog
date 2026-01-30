@@ -1,4 +1,4 @@
-{% load sekizai_tags %}
+{% load sekizai_tags static %}
 
 {% addtoblock "css" %}
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -6,6 +6,7 @@
 {% endaddtoblock %}
 {% addtoblock "js_footer" %}
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{% static 'search/js/select.js' %}"></script>
 {% endaddtoblock %}
 
 <label class="form-label mb-2">{{ field.label }}</label>
