@@ -162,10 +162,21 @@ class UniversalSearch {
             return str;
         };
 
-        // Собираем все поля из формы
+        const getScalar = (val) => (Array.isArray(val) ? val[val.length - 1] : val);
+
+        // Собираем все поля из формы (single/multiple)
         for (const [key, value] of formData.entries()) {
-            if (value.trim()) {
+            if (!value?.trim()) continue;
+
+            if (data[key] === undefined) {
                 data[key] = value;
+                continue;
+            }
+
+            if (Array.isArray(data[key])) {
+                data[key].push(value);
+            } else {
+                data[key] = [data[key], value];
             }
         }
 
@@ -178,8 +189,8 @@ class UniversalSearch {
             let maxKey = `${fieldName}_max`;
 
             // Извлекаем и парсим значения
-            let minValue = data[minKey] !== undefined ? parseValue(data[minKey]) : null;
-            let maxValue = data[maxKey] !== undefined ? parseValue(data[maxKey]) : null;
+            let minValue = data[minKey] !== undefined ? parseValue(getScalar(data[minKey])) : null;
+            let maxValue = data[maxKey] !== undefined ? parseValue(getScalar(data[maxKey])) : null;
 
             // Если есть хотя бы одно значение, создаем массив и удаляем исходные поля
             if (minValue !== null || maxValue !== null) {
@@ -198,8 +209,8 @@ class UniversalSearch {
             let maxKey = `${fieldName}_max`;
 
             // Извлекаем и парсим значения
-            let minValue = data[minKey] !== undefined ? parseDate(data[minKey]) : null;
-            let maxValue = data[maxKey] !== undefined ? parseDate(data[maxKey]) : null;
+            let minValue = data[minKey] !== undefined ? parseDate(getScalar(data[minKey])) : null;
+            let maxValue = data[maxKey] !== undefined ? parseDate(getScalar(data[maxKey])) : null;
 
             // Если есть хотя бы одно значение, создаем массив и удаляем исходные поля
             if (minValue !== null || maxValue !== null) {
@@ -208,24 +219,6 @@ class UniversalSearch {
                 data[fieldName] = [minValue, maxValue];
             }
         });
-
-        // Собираем все поля из формы (включая select)
-        for (const [key, value] of formData.entries()) {
-            if (value.trim()) {
-                // Если ключ уже существует — значит, multiple select
-                if (data[key] !== undefined) {
-                    if (Array.isArray(data[key])) {
-                        data[key].push(value);
-                    } else {
-                        alert('2')
-                        data[key] = [data[key], value];
-                    }
-                } else {
-                    alert('3')
-                    data[key] = value;
-                }
-            }
-        }
 
         // // Преобразуем значения: парсим и приводим multiple к массиву
         // for (const key in data) {

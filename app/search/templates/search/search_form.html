@@ -47,7 +47,7 @@
             </div>
             
             {% elif field.field_type == 'select' %}
-                {% include "search/items/select.html" with field=field multiple=False %}
+                {% include "search/items/select.html" with field=field multiple=True %}
             {% elif field.field_type == 'select_multiple' %}
                 {% include "search/items/select.html" with field=field multiple=True %}
             {% elif field.field_type == 'number' %}
