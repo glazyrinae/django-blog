@@ -14,7 +14,7 @@
     </button>
     
     <div class="modal fade" id="searchModal{{ config.id }}" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Поиск</h5>
@@ -28,65 +28,253 @@
     </div>
     
     {% elif config.position == 'left' or config.position == 'right' or config.position == 'top' or config.position == 'bottom' %}
+    {# ВАЖНО: select.js/range.js инициализируют только первую `.search-form` на странице. #}
+    {# Поэтому форму держим в единственном экземпляре и переносим её между контейнерами (mobile/desktop) через JS. #}
+
+    {# Скрипт добавляем ВЫШЕ include формы, чтобы он попал в `js_footer` раньше select2/noUiSlider и успел перенести DOM. #}
+    {% addtoblock "js_footer" %}
+    <script>
+      (function () {
+        function isMobile() {
+          return window.matchMedia && window.matchMedia('(max-width: 991.98px)').matches;
+        }
+
+        function getHeaderEl() {
+          return document.querySelector('header.header');
+        }
+
+        function getHeaderMetrics() {
+          var header = getHeaderEl();
+          if (!header) return { isSidebar: false, width: 0, height: 0 };
+
+          var rect = header.getBoundingClientRect();
+          var cs = window.getComputedStyle(header);
+
+          // В теме используется левый фиксированный сайдбар (height: 100vh, width: 280px).
+          // Для него нельзя использовать getBoundingClientRect().height как "высоту хедера сверху".
+          var isSidebar =
+            !isMobile() &&
+            cs.position === 'fixed' &&
+            Math.abs(rect.left) < 1 &&
+            Math.abs(rect.top) < 1 &&
+            rect.height >= window.innerHeight - 1 &&
+            rect.width > 0;
+
+          return { isSidebar: isSidebar, width: Math.round(rect.width), height: Math.round(rect.height) };
+        }
+
+        function getTopHeaderHeight() {
+          // Высота верхнего хедера (в мобильной верстке header становится обычным блоком сверху).
+          var header = getHeaderEl();
+          if (!header) return 0;
+          var m = getHeaderMetrics();
+          if (m.isSidebar) return 0;
+          return Math.round(header.getBoundingClientRect().height);
+        }
+
+        function getHalfAvailableHeight() {
+          var available = Math.max(200, window.innerHeight - getTopHeaderHeight());
+          return Math.round(available / 2);
+        }
+
+        function resetMainWrapperPadding() {
+          var wrapper = document.querySelector('.main-wrapper');
+          if (!wrapper) return;
+          wrapper.style.paddingLeft = '';
+          wrapper.style.paddingRight = '';
+          wrapper.style.paddingTop = '';
+          wrapper.style.paddingBottom = '';
+        }
+
+        function setMainWrapperPadding(side, valuePx) {
+          var wrapper = document.querySelector('.main-wrapper');
+          if (!wrapper) return;
+          if (side === 'start') wrapper.style.paddingLeft = valuePx;
+          if (side === 'end') wrapper.style.paddingRight = valuePx;
+          if (side === 'top') wrapper.style.paddingTop = valuePx;
+          if (side === 'bottom') wrapper.style.paddingBottom = valuePx;
+        }
+
+        function restorePlacement(offcanvasEl, placement) {
+          offcanvasEl.style.top = '';
+          offcanvasEl.style.left = '';
+          offcanvasEl.style.right = '';
+          offcanvasEl.style.bottom = '';
+          offcanvasEl.style.height = '';
+          offcanvasEl.style.width = '';
+
+          offcanvasEl.classList.remove('offcanvas-start', 'offcanvas-end', 'offcanvas-top', 'offcanvas-bottom');
+          if (placement === 'start') offcanvasEl.classList.add('offcanvas-start');
+          else if (placement === 'end') offcanvasEl.classList.add('offcanvas-end');
+          else if (placement === 'bottom') offcanvasEl.classList.add('offcanvas-bottom');
+          else offcanvasEl.classList.add('offcanvas-top');
+        }
+
+        function movePanelContent(panelRoot, toMobile) {
+          var inner = panelRoot.querySelector('[data-search-panel-inner="1"]');
+          if (!inner) return;
+
+          var mobileHost = panelRoot.querySelector('[data-search-panel-mobile-host="1"]');
+          var desktopHost = panelRoot.querySelector('[data-search-panel-desktop-host="1"]');
+          if (!mobileHost || !desktopHost) return;
+
+          if (toMobile) {
+            if (inner.parentElement !== mobileHost) mobileHost.appendChild(inner);
+          } else {
+            if (inner.parentElement !== desktopHost) desktopHost.appendChild(inner);
+          }
+        }
+
+        function autoShowSearchOffcanvas() {
+          resetMainWrapperPadding();
+
+          var header = getHeaderMetrics();
+
+          // Mobile: перемещаем статичный блок панели к началу `.main-wrapper`, чтобы он был под меню.
+          if (isMobile()) {
+            var wrapper = document.querySelector('.main-wrapper');
+            document.querySelectorAll('.search-panel').forEach(function (panelRoot) {
+              movePanelContent(panelRoot, true);
+              var mobilePanel = panelRoot.querySelector('.search-panel-mobile[data-search-panel-mobile="1"]');
+              if (!mobilePanel || !wrapper) return;
+              if (mobilePanel.parentElement === wrapper && mobilePanel === wrapper.firstElementChild) return;
+              wrapper.insertBefore(mobilePanel, wrapper.firstChild);
+            });
+            return;
+          }
+
+          // Desktop: панели всегда видимы (через класс `.show`), здесь только размеры
+          // и "push" контента через padding у `.main-wrapper`.
+          document.querySelectorAll('.search-panel').forEach(function (panelRoot) {
+            movePanelContent(panelRoot, false);
+          });
+
+          document.querySelectorAll('.search-panel .offcanvas.d-lg-block').forEach(function (el) {
+            var placement = el.dataset.searchPlacement || 'start';
+            restorePlacement(el, placement);
+
+            // Если header — левый сайдбар, то левую панель и top/bottom надо смещать вправо.
+            if (header.isSidebar) {
+              if (placement === 'start') {
+                el.style.left = header.width + 'px';
+              }
+              if (placement === 'top' || placement === 'bottom') {
+                el.style.left = header.width + 'px';
+                el.style.width = 'calc(100% - ' + header.width + 'px)';
+              }
+            }
+
+            if (placement === 'top') {
+              // Для верхнего хедера (мобильный режим) — учитываем высоту, но мы сюда попадаем только на desktop.
+              el.style.top = getTopHeaderHeight() + 'px';
+            }
+
+            if (placement === 'top' || placement === 'bottom') {
+              el.style.height = getHalfAvailableHeight() + 'px';
+            }
+
+            if (placement === 'start' || placement === 'end') {
+              el.style.width = '360px';
+              if (!header.isSidebar) {
+                el.style.top = getTopHeaderHeight() + 'px';
+              }
+            }
+
+            var rect = el.getBoundingClientRect();
+            if (placement === 'start' || placement === 'end') {
+              setMainWrapperPadding(placement, rect.width + 'px');
+            } else if (placement === 'top' || placement === 'bottom') {
+              setMainWrapperPadding(placement, rect.height + 'px');
+            }
+          });
+        }
+
+        // Запускаем сразу: скрипт стоит в footer и выполнится до select2/noUiSlider.
+        autoShowSearchOffcanvas();
+        window.addEventListener('resize', autoShowSearchOffcanvas);
+      })();
+    </script>
+    {% endaddtoblock %}
+
     {% with offcanvas_id="searchOffcanvas"|add:config.id|stringformat:"s" %}
+    {# Mobile: static panel in normal flow #}
+    <div class="card d-lg-none mb-3 search-panel-mobile" data-search-panel-mobile="1">
+        <div class="card-header">
+            Поиск
+        </div>
+        <div class="card-body" data-search-panel-mobile-host="1"></div>
+    </div>
+
     {% if config.position == 'left' %}
-    <div class="offcanvas offcanvas-start"
+    <div class="offcanvas offcanvas-start show d-none d-lg-block"
          tabindex="-1"
          id="{{ offcanvas_id }}"
          aria-labelledby="{{ offcanvas_id }}Label"
          data-bs-scroll="true"
          data-bs-backdrop="false"
-         data-bs-keyboard="false">
+         data-bs-keyboard="false"
+         data-search-placement="start">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
         </div>
-        <div class="offcanvas-body">
-            {% include "search/search_form.html" %}
+        <div class="offcanvas-body" data-search-panel-desktop-host="1">
+            <div data-search-panel-inner="1">
+                {% include "search/search_form.html" %}
+            </div>
         </div>
     </div>
     {% elif config.position == 'right' %}
-    <div class="offcanvas offcanvas-end"
+    <div class="offcanvas offcanvas-end show d-none d-lg-block"
          tabindex="-1"
          id="{{ offcanvas_id }}"
          aria-labelledby="{{ offcanvas_id }}Label"
          data-bs-scroll="true"
          data-bs-backdrop="false"
-         data-bs-keyboard="false">
+         data-bs-keyboard="false"
+         data-search-placement="end">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
         </div>
-        <div class="offcanvas-body">
-            {% include "search/search_form.html" %}
+        <div class="offcanvas-body" data-search-panel-desktop-host="1">
+            <div data-search-panel-inner="1">
+                {% include "search/search_form.html" %}
+            </div>
         </div>
     </div>
     {% elif config.position == 'top' %}
-    <div class="offcanvas offcanvas-top"
+    <div class="offcanvas offcanvas-top show d-none d-lg-block"
          tabindex="-1"
          id="{{ offcanvas_id }}"
          aria-labelledby="{{ offcanvas_id }}Label"
          data-bs-scroll="true"
          data-bs-backdrop="false"
-         data-bs-keyboard="false">
+         data-bs-keyboard="false"
+         data-search-placement="top">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
         </div>
-        <div class="offcanvas-body">
-            {% include "search/search_form.html" %}
+        <div class="offcanvas-body" data-search-panel-desktop-host="1">
+            <div data-search-panel-inner="1">
+                {% include "search/search_form.html" %}
+            </div>
         </div>
     </div>
     {% else %}
-    <div class="offcanvas offcanvas-bottom"
+    <div class="offcanvas offcanvas-bottom show d-none d-lg-block"
          tabindex="-1"
          id="{{ offcanvas_id }}"
          aria-labelledby="{{ offcanvas_id }}Label"
          data-bs-scroll="true"
          data-bs-backdrop="false"
-         data-bs-keyboard="false">
+         data-bs-keyboard="false"
+         data-search-placement="bottom">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="{{ offcanvas_id }}Label">Поиск</h5>
         </div>
-        <div class="offcanvas-body">
-            {% include "search/search_form.html" %}
+        <div class="offcanvas-body" data-search-panel-desktop-host="1">
+            <div data-search-panel-inner="1">
+                {% include "search/search_form.html" %}
+            </div>
         </div>
     </div>
     {% endif %}
@@ -101,28 +289,4 @@
     
 </div>
 
-{% addtoblock "js_footer" %}
-<script>
-  (function () {
-    function autoShowSearchOffcanvas() {
-      if (!window.bootstrap || !window.bootstrap.Offcanvas) return;
-
-      document.querySelectorAll('.search-panel .offcanvas').forEach(function (el) {
-        var instance = window.bootstrap.Offcanvas.getOrCreateInstance(el, {
-          backdrop: false,
-          scroll: true,
-          keyboard: false
-        });
-        instance.show();
-      });
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', autoShowSearchOffcanvas);
-    } else {
-      autoShowSearchOffcanvas();
-    }
-  })();
-</script>
-{% endaddtoblock %}
 {% endif %}
