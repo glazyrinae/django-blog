@@ -1,46 +1,13 @@
 {% load sekizai_tags static %}
 
 {% addtoblock "css" %}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
-    <style>
-        .search-field-accordion .accordion-button:focus { box-shadow: none; }
-        .search-field-accordion .accordion-button:not(.collapsed) {
-            color: inherit;
-            background-color: transparent;
-            box-shadow: none;
-        }
-        .date-range-group {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 0.375rem;
-            padding: 15px;
-            margin-bottom: 0;
-        }
-        .date-range-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .range-title {
-            font-weight: 600;
-            color: #495057;
-        }
-        .remove-range {
-            cursor: pointer;
-            color: #dc3545;
-            font-size: 20px;
-            line-height: 1;
-        }
-        .datepicker {
-            z-index: 1060 !important;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static "css/src/bootstrap-datepicker.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/date_range.css" %}">
 {% endaddtoblock %}
 {% addtoblock "js_footer" %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.ru.min.js"></script>
-    <script src="{% static 'search/js/date_range.js' %}"></script>
+    <script src="{% static 'js/src/bootstrap-datepicker.min.js' %}"></script>
+    <script src="{% static 'js/src/bootstrap-datepicker.ru.min.js' %}"></script>
+    <script src="{% static 'js/date_range.js' %}"></script>
 {% endaddtoblock %}
 
 <div class="accordion accordion-flush mb-2 search-field-accordion">

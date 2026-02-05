@@ -83,9 +83,9 @@
 
 
 {% addtoblock "js_header" %}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+     <script src="{% static 'js/src/jquery-3.7.1.min.js' %}"></script>
 {% endaddtoblock %}
 
 {% addtoblock "js_footer" %}
-    <script src="{% static 'search/js/search.js' %}"></script>
+    <script src="{% static 'js/search.js' %}"></script>
 {% endaddtoblock %}

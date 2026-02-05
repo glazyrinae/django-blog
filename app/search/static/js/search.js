@@ -220,17 +220,6 @@ class UniversalSearch {
             }
         });
 
-        // // Преобразуем значения: парсим и приводим multiple к массиву
-        // for (const key in data) {
-        //     if (Array.isArray(data[key])) {
-        //         // Multiple select: парсим каждое значение
-        //         data[key] = data[key].filter(v => typeof v === 'string' && v.trim() !== '');
-        //     } else {
-        //         // Single select или input
-        //         data[key] = parseValue(data[key]);
-        //     }
-        // }
-
         return data;
     }
     

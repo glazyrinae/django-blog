@@ -1,20 +1,13 @@
 {% load sekizai_tags static %}
 
 {% addtoblock "css" %}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-    <style>
-        .search-field-accordion .accordion-button:focus { box-shadow: none; }
-        .search-field-accordion .accordion-button:not(.collapsed) {
-            color: inherit;
-            background-color: transparent;
-            box-shadow: none;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static "css/src/select2.css" %}">
+    <link rel="stylesheet" href="{% static "css/src/select2-bootstrap-5-theme.min.css" %}">
+    <link rel="stylesheet" href="{% static "css/select.css" %}">
 {% endaddtoblock %}
 {% addtoblock "js_footer" %}
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="{% static 'search/js/select.js' %}"></script>
+    <script src="{% static 'js/src/select2.js' %}"></script>
+    <script src="{% static 'js/select.js' %}"></script>
 {% endaddtoblock %}
 
 <div class="accordion accordion-flush mb-2 search-field-accordion">
