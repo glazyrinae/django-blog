@@ -169,7 +169,7 @@ class UniversalSearch {
             if (!value?.trim()) continue;
 
             if (data[key] === undefined) {
-                data[key] = value;
+                data[key] = [value];
                 continue;
             }
 

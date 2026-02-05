@@ -5,7 +5,7 @@
       data-config-id="{{ config.id }}"
       data-results-limit="{{ config.results_limit }}">
     
-    <div class="input-group mb-3">
+    <!-- <div class="input-group mb-3">
         <input type="text" 
                class="form-control search-input" 
                placeholder="{{ config.placeholder }}"
@@ -14,7 +14,7 @@
         <button class="btn btn-outline-secondary search-button" type="button">
             <i class="bi bi-search"></i>
         </button>
-    </div>
+    </div> -->
     
     <!-- Дополнительные поля -->
     <div class="search-fields mb-3">
@@ -25,7 +25,7 @@
             
             {% if field.field_type == 'text' %}
             
-                {% include "items/text.html" with field=field %}
+                {% include "search/items/text.html" with field=field %}
             
             {% elif field.field_type == 'checkbox' %}
             
@@ -47,43 +47,12 @@
             </div>
             
             {% elif field.field_type == 'select' %}
-                {% include "search/items/select.html" with field=field multiple=True %}
+                {% include "search/items/select.html" with field=field multiple=False %}
             {% elif field.field_type == 'select_multiple' %}
                 {% include "search/items/select.html" with field=field multiple=True %}
-            {% elif field.field_type == 'number' %}
-            <!-- <label class="form-label">{{ field.label }}</label>
-            <input type="number" 
-                   class="form-control" 
-                   name="{{ field.field_name }}"
-                   {% if field.min_value is not None %}min="{{ field.min_value }}"{% endif %}
-                   {% if field.max_value is not None %}max="{{ field.max_value }}"{% endif %}
-                   {% if field.step is not None %}step="{{ field.step }}"{% endif %}
-                   placeholder="{{ field.placeholder|default:'' }}"> -->
             {% elif field.field_type == 'range' %}
                 {% include "search/items/range.html" with field=field %}
-            {% elif field.field_type == 'interval' %}
-            
-            <!-- <label class="form-label">{{ field.label }}</label>
-            <div class="row">
-                <div class="col">
-                    <input type="number" 
-                           class="form-control" 
-                           name="{{ field.field_name }}_min"
-                           placeholder="От"
-                           {% if field.min_value is not None %}min="{{ field.min_value }}"{% endif %}>
-                </div>
-                <div class="col">
-                    <input type="number" 
-                           class="form-control" 
-                           name="{{ field.field_name }}_max"
-                           placeholder="До"
-                           {% if field.max_value is not None %}max="{{ field.max_value }}"{% endif %}>
-                </div>
-            </div> -->
-            
             {% elif field.field_type == 'date_range' %}
-                {% include "search/items/date_range.html" with field=field %}
-            {% elif field.field_type == 'date' %}
                 {% include "search/items/date_range.html" with field=field %}
             {% endif %}
         </div>

@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from datetime import datetime
 from .models import SearchConfig, SearchField
 
 
@@ -32,62 +33,54 @@ def api_search(request):
         query = Q()
         search_fields = config.fields.filter(is_searchable=True)
 
-        # Основной текстовый поиск
-        q = search_data.get("q", "").strip()
-        if q:
-            # Ищем по всем текстовым полям
-            text_fields = search_fields.filter(field_type="text")
-            text_q = Q()
-            for field in text_fields:
-                field_lookup = f"{field.field_name}__icontains"
-                text_q |= Q(**{field_lookup: q})
-            query &= text_q
-
         # Дополнительные фильтры
-        for field in search_fields.exclude(field_type="text"):
+        for field in search_fields:
             field_name = field.field_name
             value = search_data.get(field_name)
 
-            if not value and field.field_type != "range":
+            if not value and field.field_type != "date_range":
                 continue
 
-            if field.field_type == "checkbox":
-                if value == "on" or value is True:
-                    query &= Q(**{field_name: True})
-                elif value == "off" or value is False:
-                    query &= Q(**{field_name: False})
+            if field.field_type == "text":
+                field_lookup = f"{field_name}__icontains"
+                query &= Q(**{field_lookup: value})
 
-            elif field.field_type == "select":
-                # Для select с множественным выбором (если значения приходят как список)
+            # elif field.field_type == "checkbox":
+            #     if value == "on" or value is True:
+            #         query &= Q(**{field_name: True})
+            #     elif value == "off" or value is False:
+            #         query &= Q(**{field_name: False})
+
+            elif field.field_type in ("select_multiple", "select"):
                 if isinstance(value, list):
                     # OR запрос через | для каждого значения
                     select_q = Q()
                     for val in value:
                         select_q |= Q(**{field_name: val})
                     query &= select_q
-                else:
-                    # Одиночное значение
-                    query &= Q(**{field_name: value})
 
-            elif field.field_type == "radio":
-                query &= Q(**{field_name: value})
+            # elif field.field_type == "radio":
+            #     query &= Q(**{field_name: value})
 
-            elif field.field_type == "number":
-                query &= Q(**{field_name: value})
+            # elif field.field_type == "number":
+            #     query &= Q(**{field_name: value})
 
-            elif field.field_type == "date":
-                query &= Q(**{field_name: value})
+            elif field.field_type == "date_range":
+                if date_min := search_data.get(f"{field_name}_min"):
+                    date_min = datetime.strptime(date_min, "%d.%m.%Y").date()
+                    query &= Q(**{f"{field_name}__gte": date_min})
+                if date_max := search_data.get(f"{field_name}_max"):
+                    date_max = datetime.strptime(date_max, "%d.%m.%Y").date()
+                    query &= Q(**{f"{field_name}__lte": date_max})
 
             elif field.field_type == "range":
-                min_value = search_data.get(f"{field_name}_min")
-                max_value = search_data.get(f"{field_name}_max")
-
-                if min_value:
-                    query &= Q(**{f"{field_name}__gte": min_value})
-                if max_value:
-                    query &= Q(**{f"{field_name}__lte": max_value})
+                if value[0]:
+                    query &= Q(**{f"{field_name}__gte": value[0]})
+                if value[1]:
+                    query &= Q(**{f"{field_name}__lte": value[1]})
 
         # Выполняем поиск
+        _q = model_class.objects.filter(query).query
         results = model_class.objects.filter(query)[:limit]
 
         # Формируем ответ
@@ -114,6 +107,7 @@ def api_search(request):
         return JsonResponse(
             {
                 "success": True,
+                "query": str(_q),
                 "results": formatted_results,
                 "total": results.count(),
                 "has_more": results.count() >= limit,

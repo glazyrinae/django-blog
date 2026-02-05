@@ -46,12 +46,10 @@ class SearchField(models.Model):
 
     FIELD_TYPES = [
         ("text", "Текстовое поле"),
-        ("checkbox", "Чекбокс"),
-        ("radio", "Радиокнопка"),
-        ("select", "Выпадающий список"),
-        ("number", "Числовое поле"),
-        ("date", "Дата"),
-        ("range", "Диапазон"),
+        ("date_range", "Дата"),
+        ("range", "Интервал чисел"),
+        ("select", "Одинарный выбор"),
+        ("select_multiple", "Множественный выбор"),
     ]
 
     config = models.ForeignKey(
@@ -63,7 +61,7 @@ class SearchField(models.Model):
     field_name = models.CharField("Название поля в модели", max_length=100)
     label = models.CharField("Отображаемое название", max_length=100)
     field_type = models.CharField(
-        "Тип поля", max_length=10, choices=FIELD_TYPES, default="text"
+        "Тип поля", max_length=100, choices=FIELD_TYPES, default="text"
     )
     is_visible = models.BooleanField("Отображать в форме", default=True)
     is_searchable = models.BooleanField("Использовать для поиска", default=True)

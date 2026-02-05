@@ -34,6 +34,7 @@ media/*
 
 # Migrations
 app/blog/migrations/*
+app/search/migrations/*
 app/settings/migrations/*
 !app/*/migrations/__init__.py
 

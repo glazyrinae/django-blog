@@ -30,15 +30,23 @@ fi
 case "${ACTION} ${ENV}" in
   "start dev")
     load_env ".env.dev"
+    "${compose_cmd[@]}" --env-file .env.dev "${compose_dev_files[@]}" up -d
+    ;;
+  "init dev")
+    load_env ".env.dev"
     "${compose_cmd[@]}" --env-file .env.dev "${compose_dev_files[@]}" up -d --build
     ;;
   "stop dev")
     load_env ".env.dev"
     "${compose_cmd[@]}" --env-file .env.dev "${compose_dev_files[@]}" down
     ;;
-  "start prod")
+  "init prod")
     load_env ".env.prod"
     "${compose_cmd[@]}" --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.local.yml up -d --build
+    ;;
+  "start prod")
+    load_env ".env.prod"
+    "${compose_cmd[@]}" --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.local.yml up -d
     ;;
   "stop prod")
     load_env ".env.prod"

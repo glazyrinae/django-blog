@@ -274,6 +274,12 @@ class AdminCommentView(View):
         """Одобрение комментария"""
         comment.approve()
 
+        content_object = comment.content_type.get_object_for_this_type(
+            pk=comment.object_id
+        )
+        content_object.rating = comment.get_statistics.get("average_rating", 0)
+        content_object.save(update_fields=["rating"])
+
         return JsonResponse(
             {
                 "success": True,
