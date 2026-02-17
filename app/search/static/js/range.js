@@ -1,385 +1,450 @@
-(function () {
-    // Инициализация всех форм поиска на странице
+(function() {
+    'use strict';
 
-    this.form = document.querySelectorAll('.search-form')[0];
-
-    // Вынесено в отдельный файл `search/js/range.js`.
-    // Оставляем текущую реализацию как fallback на случай, если range.js не подгрузился.
-    if (typeof window.initSearchRangeSliders === 'function') {
-        window.initSearchRangeSliders(this.form);
-        return;
-    }
-
-    console.log('Initializing noUiSliders...');
-    
-    const sliders = this.form.querySelectorAll('.slider');
-    console.log('Found sliders:', sliders.length);
-    
-    if (sliders.length === 0) {
-        console.warn('⚠️ Не найдено элементов .slider');
-        return;
-    }
-    
-    // Функция для проверки валидности ввода
-    const isValidInput = (value, minLimit, maxLimit, isMin, otherValue = null) => {
-        if (value === '' || value === null || value === undefined) return false;
-        
-        const num = parseInt(value);
-        if (isNaN(num)) return false;
-        
-        // Проверка на диапазон
-        if (num < minLimit || num > maxLimit) return false;
-        
-        // Для минимального значения - проверяем, что не больше максимального
-        if (isMin && otherValue !== null && num > otherValue) return false;
-        
-        // Для максимального значения - проверяем, что не меньше минимального
-        if (!isMin && otherValue !== null && num < otherValue) return false;
-        
-        return true;
+    // Конфигурация
+    const CONFIG = {
+        SELECTORS: {
+            FORM: '.search-form',
+            SLIDER: '.slider',
+            CONTAINER: '.range-slider-wrapper',
+            MIN_DISPLAY: '.slider-value-min',
+            MAX_DISPLAY: '.slider-value-max',
+            MIN_INPUT: '.slider-min-input',
+            MAX_INPUT: '.slider-max-input',
+            MIN_HIDDEN: '.slider-hidden-min',
+            MAX_HIDDEN: '.slider-hidden-max'
+        },
+        KEYS: {
+            ALLOWED: ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '.', ',']
+        },
+        LOG_PREFIX: '[RangeSlider]'
     };
-    
-    sliders.forEach((sliderElement, index) => {
-        console.log(`Initializing slider ${index + 1}:`, sliderElement);
-        
-        try {
-            // Получаем данные из родительского контейнера
-            const container = sliderElement.closest('.range-slider-wrapper');
-            if (!container) {
-                console.error('Container not found for slider', sliderElement);
+
+    /**
+     * Класс для управления слайдером с поддержкой свободного ввода
+     */
+    class SmartRangeSlider {
+        constructor(container, index) {
+            this.container = container;
+            this.index = index;
+            this.sliderElement = container.querySelector(CONFIG.SELECTORS.SLIDER);
+            this.minLimit = parseInt(container.dataset.min) || 0;
+            this.maxLimit = parseInt(container.dataset.max) || 100;
+            this.minStart = parseInt(container.dataset.startMin) || 0;
+            this.maxStart = parseInt(container.dataset.startMax) || 100;
+            this.stepValue = parseInt(container.dataset.step) || 1;
+            this.slider = null;
+            
+            // Храним предыдущие значения для восстановления
+            this.previousValues = {
+                min: this.minLimit,
+                max: this.maxLimit
+            };
+            
+            // Отслеживаем фокус
+            this.activeInput = null;
+            
+            this.elements = {
+                minDisplay: container.querySelector(CONFIG.SELECTORS.MIN_DISPLAY),
+                maxDisplay: container.querySelector(CONFIG.SELECTORS.MAX_DISPLAY),
+                minInput: container.querySelector(CONFIG.SELECTORS.MIN_INPUT),
+                maxInput: container.querySelector(CONFIG.SELECTORS.MAX_INPUT),
+                minHidden: container.querySelector(CONFIG.SELECTORS.MIN_HIDDEN),
+                maxHidden: container.querySelector(CONFIG.SELECTORS.MAX_HIDDEN)
+            };
+        }
+
+        /**
+         * Инициализация слайдера
+         */
+        init() {
+            if (!this.sliderElement) {
+                console.warn(`${CONFIG.LOG_PREFIX} Slider element not found`);
+                return false;
+            }
+
+            try {
+                this.createSlider();
+                this.setupEventListeners();
+                this.setInitialValues();
+                console.log(`${CONFIG.LOG_PREFIX} Slider ${this.index + 1} initialized successfully`);
+                return true;
+            } catch (error) {
+                console.error(`${CONFIG.LOG_PREFIX} Failed to initialize slider ${this.index + 1}:`, error);
+                return false;
+            }
+        }
+
+        /**
+         * Создание экземпляра noUiSlider
+         */
+        createSlider() {
+            noUiSlider.create(this.sliderElement, {
+                start: [this.minLimit, this.maxLimit],
+                connect: true,
+                step: this.stepValue,
+                start: [this.minStart, this.maxStart],
+                range: {
+                    min: this.minLimit,
+                    max: this.maxLimit
+                },
+                pips: null
+            });
+
+            this.slider = this.sliderElement.noUiSlider;
+        }
+
+        /**
+         * Настройка обработчиков событий
+         */
+        setupEventListeners() {
+            // Событие обновления слайдера
+            this.slider.on('update', this.handleSliderUpdate.bind(this));
+
+            // Настройка обработчиков для полей ввода
+            this.setupInputHandlers();
+        }
+
+        /**
+         * Обработка обновления слайдера
+         */
+        handleSliderUpdate(values) {
+            const [minVal, maxVal] = values.map(val => Math.round(val));
+            
+            // Сохраняем новые значения
+            this.previousValues.min = minVal;
+            this.previousValues.max = maxVal;
+            
+            // Обновляем все отображения
+            this.updateAllFields(minVal, maxVal);
+        }
+
+        /**
+         * Обновление всех полей
+         */
+        updateAllFields(minVal, maxVal) {
+            // Обновляем отображение
+            if (this.elements.minDisplay) {
+                this.elements.minDisplay.textContent = minVal;
+            }
+            if (this.elements.maxDisplay) {
+                this.elements.maxDisplay.textContent = maxVal;
+            }
+            
+            // Обновляем скрытые поля
+            if (this.elements.minHidden) {
+                this.elements.minHidden.value = minVal;
+            }
+            if (this.elements.maxHidden) {
+                this.elements.maxHidden.value = maxVal;
+            }
+            
+            // Обновляем input поля только если они не в фокусе
+            if (this.elements.minInput && this.activeInput !== this.elements.minInput) {
+                this.elements.minInput.value = minVal;
+            }
+            if (this.elements.maxInput && this.activeInput !== this.elements.maxInput) {
+                this.elements.maxInput.value = maxVal;
+            }
+        }
+
+        /**
+         * Настройка обработчиков для полей ввода
+         */
+        setupInputHandlers() {
+            if (this.elements.minInput) {
+                this.setupInputHandler(this.elements.minInput, true);
+            }
+            
+            if (this.elements.maxInput) {
+                this.setupInputHandler(this.elements.maxInput, false);
+            }
+        }
+
+        /**
+         * Настройка обработчика для конкретного поля ввода
+         */
+        setupInputHandler(inputElement, isMinField) {
+            // Сохраняем предыдущее значение при фокусе
+            inputElement.addEventListener('focus', () => {
+                this.activeInput = inputElement;
+                this.previousValues[isMinField ? 'min' : 'max'] = inputElement.value;
+            });
+            
+            // Восстанавливаем значение при потере фокуса, если новое значение некорректно
+            inputElement.addEventListener('blur', () => {
+                this.handleInputBlur(inputElement, isMinField);
+                this.activeInput = null;
+            });
+            
+            // Валидация при вводе
+            inputElement.addEventListener('keydown', this.handleKeyDown.bind(this));
+            
+            // Обработка ввода в реальном времени
+            inputElement.addEventListener('input', () => {
+                this.handleInputChange(inputElement, isMinField);
+            });
+            
+            // Обработка вставки
+            inputElement.addEventListener('paste', (e) => {
+                this.handlePaste(e, inputElement, isMinField);
+            });
+            
+            // Настройка HTML5 атрибутов
+            this.setupInputAttributes(inputElement, isMinField);
+        }
+
+        /**
+         * Обработка нажатия клавиш
+         */
+        handleKeyDown(e) {
+            // Разрешаем цифры и управляющие клавиши
+            if (!/[0-9]/.test(e.key) && !CONFIG.KEYS.ALLOWED.includes(e.key)) {
+                e.preventDefault();
+            }
+        }
+
+        /**
+         * Обработка изменения значения в поле ввода
+         */
+        handleInputChange(inputElement, isMinField) {
+            const value = inputElement.value.trim();
+            
+            // Если поле пустое, ничего не делаем
+            if (value === '') {
                 return;
             }
             
-            const minLimit = parseInt(container.dataset.min) || 0;
-            const maxLimit = parseInt(container.dataset.max) || 100;
-            const stepValue = parseInt(container.dataset.step) || 1;
-            
-            console.log(`Slider ${index + 1} config:`, { minLimit, maxLimit, stepValue });
-            
-            // Создаем слайдер
-            noUiSlider.create(sliderElement, {
-                start: [minLimit, maxLimit],
-                connect: true,
-                step: stepValue,
-                range: {
-                    'min': minLimit,
-                    'max': maxLimit
-                },
-                pips: null,
-            });
-            
-            console.log(`✅ Slider ${index + 1} created successfully`);
-            
-            // Находим связанные элементы
-            const minDisplay = container.querySelector('.slider-value-min');
-            const maxDisplay = container.querySelector('.slider-value-max');
-            const minInput = container.querySelector('.slider-min-input');
-            const maxInput = container.querySelector('.slider-max-input');
-            const minHidden = container.querySelector('.slider-hidden-min');
-            const maxHidden = container.querySelector('.slider-hidden-max');
-            
-            // Получаем экземпляр слайдера
-            const slider = sliderElement.noUiSlider;
-            
-            // Обновляем отображение при изменении слайдера
-            slider.on('update', function(values, handle) {
-                const minVal = Math.round(values[0]);
-                const maxVal = Math.round(values[1]);
-                
-                console.log(`Slider ${index + 1} updated:`, minVal, maxVal, 'handle:', handle);
-                
-                // Обновляем отображение
-                if (minDisplay) minDisplay.textContent = minVal;
-                if (maxDisplay) maxDisplay.textContent = maxVal;
-                
-                // Обновляем скрытые поля
-                if (minHidden) minHidden.value = minVal;
-                if (maxHidden) maxHidden.value = maxVal;
-                
-                // Обновляем input поля без проверки на активность
-                // Проверяем только чтобы не создавать циклическое обновление
-                if (handle === 0) {
-                    // Двигался левый ползунок - обновляем только минимальное поле
-                    if (minInput && minInput.value != minVal) {
-                        minInput.value = minVal;
-                    }
-                } else if (handle === 1) {
-                    // Двигался правый ползунок - обновляем только максимальное поле
-                    if (maxInput && maxInput.value != maxVal) {
-                        maxInput.value = maxVal;
-                    }
-                } else {
-                    // Если handle не указан - обновляем оба поля
-                    if (minInput && minInput.value != minVal) {
-                        minInput.value = minVal;
-                    }
-                    if (maxInput && maxInput.value != maxVal) {
-                        maxInput.value = maxVal;
-                    }
-                }
-            });
-            
-            // Функция для восстановления корректного значения
-            const restoreValidValue = (input, isMinField, useSliderValue = true) => {
-                if (useSliderValue) {
-                    const currentValues = slider.get();
-                    if (isMinField) {
-                        input.value = parseInt(currentValues[0]);
-                    } else {
-                        input.value = parseInt(currentValues[1]);
-                    }
-                } else {
-                    // Или используем лимиты
-                    if (isMinField) {
-                        input.value = minLimit;
-                    } else {
-                        input.value = maxLimit;
-                    }
-                }
-            };
-            
-            // ОБРАБОТЧИК ДЛЯ INPUT ПОЛЕЙ
-            
-            // Для минимального значения
-            if (minInput) {
-                // Добавляем валидацию при вводе
-                minInput.addEventListener('keydown', function(e) {
-                    // Разрешаем: цифры, backspace, delete, tab, стрелки, точка для чисел с плавающей точкой
-                    const allowedKeys = [
-                        'Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 
-                        'ArrowUp', 'ArrowDown', '.', ','
-                    ];
-                    
-                    // Если это не цифра и не разрешенная клавиша
-                    if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
-                        e.preventDefault();
-                    }
-                });
-                
-                // Валидация при вводе в реальном времени
-                minInput.addEventListener('input', function() {
-                    const inputValue = this.value;
-                    
-                    // Если поле пустое, не обновляем слайдер
-                    if (inputValue === '') return;
-                    
-                    const newMin = parseInt(inputValue);
-                    if (isNaN(newMin)) {
-                        restoreValidValue(this, true);
-                        return;
-                    }
-                    
-                    const currentValues = slider.get();
-                    const currentMax = parseInt(currentValues[1]);
-                    
-                    // Проверка валидности ввода
-                    if (!isValidInput(newMin, minLimit, maxLimit, true, currentMax)) {
-                        // Восстанавливаем предыдущее значение
-                        restoreValidValue(this, true);
-                    } else {
-                        // Обновляем слайдер если значение корректное
-                        slider.set([newMin, currentMax]);
-                    }
-                });
-                
-                // Валидация при потере фокуса
-                minInput.addEventListener('change', function() {
-                    const inputValue = this.value;
-                    
-                    // Если поле пустое, устанавливаем минимальное значение
-                    if (inputValue === '') {
-                        this.value = minLimit;
-                        slider.set([minLimit, slider.get()[1]]);
-                        return;
-                    }
-                    
-                    const newMin = parseInt(inputValue);
-                    const currentValues = slider.get();
-                    const currentMax = parseInt(currentValues[1]);
-                    
-                    // Проверка валидности
-                    if (!isValidInput(newMin, minLimit, maxLimit, true, currentMax)) {
-                        // Автоматическая коррекция значения
-                        let correctedValue = newMin;
-                        
-                        // Если меньше минимального лимита
-                        if (correctedValue < minLimit) {
-                            correctedValue = minLimit;
-                        }
-                        // Если больше максимального лимита
-                        else if (correctedValue > maxLimit) {
-                            correctedValue = maxLimit;
-                        }
-                        // Если больше текущего максимального значения
-                        else if (correctedValue > currentMax) {
-                            correctedValue = currentMax;
-                        }
-                        
-                        this.value = correctedValue;
-                        slider.set([correctedValue, currentMax]);
-                    }
-                });
-                
-                // Валидация при попытке вставить текст
-                minInput.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    
-                    // Получаем текст из буфера обмена
-                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                    const pastedNumber = parseInt(pastedText);
-                    
-                    if (!isNaN(pastedNumber)) {
-                        const currentValues = slider.get();
-                        const currentMax = parseInt(currentValues[1]);
-                        
-                        if (isValidInput(pastedNumber, minLimit, maxLimit, true, currentMax)) {
-                            this.value = pastedNumber;
-                            slider.set([pastedNumber, currentMax]);
-                        }
-                    }
-                });
+            // Парсим число
+            const numValue = parseInt(value);
+            if (isNaN(numValue)) {
+                return;
             }
             
-            // Для максимального значения
-            if (maxInput) {
-                // Добавляем валидацию при вводе
-                maxInput.addEventListener('keydown', function(e) {
-                    // Разрешаем: цифры, backspace, delete, tab, стрелки, точка для чисел с плавающей точкой
-                    const allowedKeys = [
-                        'Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 
-                        'ArrowUp', 'ArrowDown', '.', ','
-                    ];
-                    // Если это не цифра и не разрешенная клавиша
-                    if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
-                        e.preventDefault();
-                    }
-                });
-                
-                maxInput.addEventListener('input', function() {
-                    const inputValue = this.value;
-                    
-                    // Если поле пустое, разрешаем пустое значение
-                    if (inputValue === '') return;
-                    
-                    // Пробуем преобразовать в число
-                    const newMax = parseInt(inputValue);
-                    if (isNaN(newMax)) {
-                        // Если не число, но поле не пустое - возможно пользователь вводит
-                        return; // Не восстанавливаем сразу, ждем пока ввод закончится
-                    }
-                    
-                    const currentValues = slider.get();
-                    const currentMin = parseInt(currentValues[0]);
-                    
-                    // Проверка на диапазон, но не проверяем относительно currentMin при вводе
-                    // (пользователь может ввести число меньше текущего min, но мы это исправим позже)
-                    if (newMax < minLimit) {
-                        // Если меньше минимального лимита, не обновляем слайдер
-                        return;
-                    }
-                    
-                    if (newMax > maxLimit) {
-                        // Если больше максимального лимита, можно либо ограничить, либо не обновлять
-                        // Давайте ограничим значением maxLimit
-                        this.value = maxLimit;
-                        slider.set([currentMin, maxLimit]);
-                        return;
-                    }
-                    
-                    // Обновляем слайдер (даже если newMax < currentMin, это исправится в change событии)
-                    slider.set([currentMin, newMax]);
-                });
-                
-                maxInput.addEventListener('change', function() {
-                    const inputValue = this.value.trim();
-                    
-                    // Если поле пустое, устанавливаем максимальное значение по умолчанию
-                    if (inputValue === '') {
-                        this.value = maxLimit;
-                        slider.set([slider.get()[0], maxLimit]);
-                        return;
-                    }
-                    
-                    const newMax = parseInt(inputValue);
-                    const currentValues = slider.get();
-                    const currentMin = parseInt(currentValues[0]);
-                    
-                    // Проверка валидности
-                    let finalMax = newMax;
-                    
-                    if (isNaN(finalMax)) {
-                        finalMax = maxLimit;
-                    }
-                    
-                    // Корректируем значение
-                    if (finalMax < minLimit) {
-                        finalMax = minLimit;
-                    }
-                    
-                    if (finalMax > maxLimit) {
-                        finalMax = maxLimit;
-                    }
-                    
-                    if (finalMax < currentMin) {
-                        // Если максимальное значение стало меньше минимального,
-                        // двигаем и минимальное значение тоже
-                        finalMax = Math.max(finalMax, minLimit);
-                        slider.set([finalMax, finalMax]); // Устанавливаем оба значения одинаковыми
-                        if (minInput) minInput.value = finalMax;
-                    } else {
-                        slider.set([currentMin, finalMax]);
-                    }
-                    
-                    // Устанавливаем исправленное значение
-                    this.value = finalMax;
-                });
-                
-                // Валидация при попытке вставить текст
-                maxInput.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    
-                    // Получаем текст из буфера обмена
-                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                    const pastedNumber = parseInt(pastedText);
-                    
-                    if (!isNaN(pastedNumber)) {
-                        const currentValues = slider.get();
-                        const currentMin = parseInt(currentValues[0]);
-                        
-                        if (isValidInput(pastedNumber, minLimit, maxLimit, false, currentMin)) {
-                            this.value = pastedNumber;
-                            slider.set([currentMin, pastedNumber]);
-                        }
-                    }
-                });
+            // Проверяем лимиты
+            if (numValue < this.minLimit || numValue > this.maxLimit) {
+                return;
             }
             
-            // Устанавливаем начальные значения
-            if (minDisplay) minDisplay.textContent = minLimit;
-            if (maxDisplay) maxDisplay.textContent = maxLimit;
-            if (minInput) {
-                minInput.value = minLimit;
-                minInput.min = minLimit;
-                minInput.max = maxLimit;
-                minInput.step = stepValue;
-                // Добавляем placeholder с подсказкой
-                minInput.placeholder = `${minLimit}-${maxLimit}`;
-            }
-            if (maxInput) {
-                maxInput.value = maxLimit;
-                maxInput.min = minLimit;
-                maxInput.max = maxLimit;
-                maxInput.step = stepValue;
-                // Добавляем placeholder с подсказкой
-                maxInput.placeholder = `${minLimit}-${maxLimit}`;
-            }
-            if (minHidden) minHidden.value = minLimit;
-            if (maxHidden) maxHidden.value = maxLimit;
+            // Получаем текущие значения слайдера
+            const currentValues = this.slider.get().map(v => parseInt(v));
+            let newMin = currentValues[0];
+            let newMax = currentValues[1];
             
-        } catch (error) {
-            console.error(`❌ Error creating slider ${index + 1}:`, error);
-            this.showError(`Ошибка создания слайдера: ${error.message}`);
+            // Обновляем соответствующее значение
+            if (isMinField) {
+                newMin = numValue;
+            } else {
+                newMax = numValue;
+            }
+            
+            // Применяем изменения к слайдеру (разрешаем min > max)
+            this.slider.set([newMin, newMax]);
         }
-    });
-})();
 
+        /**
+         * Обработка потери фокуса с полем ввода
+         */
+        handleInputBlur(inputElement, isMinField) {
+            const value = inputElement.value.trim();
+            const fieldType = isMinField ? 'min' : 'max';
+            
+            // Если поле пустое, восстанавливаем предыдущее значение
+            if (value === '') {
+                inputElement.value = this.previousValues[fieldType];
+                return;
+            }
+            
+            // Парсим число
+            const numValue = parseInt(value);
+            
+            // Если некорректное число, восстанавливаем предыдущее значение
+            if (isNaN(numValue)) {
+                inputElement.value = this.previousValues[fieldType];
+                return;
+            }
+            
+            // Проверяем лимиты
+            if (numValue < this.minLimit || numValue > this.maxLimit) {
+                inputElement.value = this.previousValues[fieldType];
+                return;
+            }
+            
+            // Если значение корректное, обновляем слайдер
+            const currentValues = this.slider.get().map(v => parseInt(v));
+            let newMin = currentValues[0];
+            let newMax = currentValues[1];
+            
+            if (isMinField) {
+                newMin = numValue;
+            } else {
+                newMax = numValue;
+            }
+            
+            // Обновляем слайдер
+            this.slider.set([newMin, newMax]);
+        }
+
+        /**
+         * Обработка вставки текста
+         */
+        handlePaste(event, inputElement, isMinField) {
+            event.preventDefault();
+            
+            // Получаем текст из буфера обмена
+            const clipboardData = event.clipboardData || window.clipboardData;
+            const pastedText = clipboardData.getData('text');
+            const pastedNumber = parseInt(pastedText);
+            
+            // Если это число, вставляем его
+            if (!isNaN(pastedNumber)) {
+                // Ограничиваем лимитами
+                const limitedValue = Math.max(this.minLimit, Math.min(this.maxLimit, pastedNumber));
+                inputElement.value = limitedValue;
+                
+                // Обновляем слайдер
+                const currentValues = this.slider.get().map(v => parseInt(v));
+                let newMin = currentValues[0];
+                let newMax = currentValues[1];
+                
+                if (isMinField) {
+                    newMin = limitedValue;
+                } else {
+                    newMax = limitedValue;
+                }
+                
+                this.slider.set([newMin, newMax]);
+            }
+        }
+
+        /**
+         * Настройка HTML5 атрибутов полей ввода
+         */
+        setupInputAttributes(inputElement, isMinField) {
+            inputElement.min = this.minLimit;
+            inputElement.max = this.maxLimit;
+            inputElement.step = this.stepValue;
+            inputElement.placeholder = `${this.minLimit}-${this.maxLimit}`;
+            
+            // Добавляем подсказку
+            inputElement.title = `Введите значение от ${this.minLimit} до ${this.maxLimit}`;
+        }
+
+        /**
+         * Установка начальных значений
+         */
+        setInitialValues() {
+            const initialMin = this.minStart || this.minLimit;
+            const initialMax = this.maxStart || this.maxLimit;
+            // Сохраняем как предыдущие значения
+            this.previousValues.min = initialMin;
+            this.previousValues.max = initialMax;
+            
+            // Устанавливаем значения
+            if (this.elements.minDisplay) {
+                this.elements.minDisplay.textContent = initialMin;
+            }
+            if (this.elements.maxDisplay) {
+                this.elements.maxDisplay.textContent = initialMax;
+            }
+            if (this.elements.minInput) {
+                this.elements.minInput.value = initialMin;
+            }
+            if (this.elements.maxInput) {
+                this.elements.maxInput.value = initialMax;
+            }
+            if (this.elements.minHidden) {
+                this.elements.minHidden.value = initialMin;
+            }
+            if (this.elements.maxHidden) {
+                this.elements.maxHidden.value = initialMax;
+            }
+        }
+    }
+
+    /**
+     * Основная функция инициализации
+     */
+    function initRangeSliders() {
+        console.log(`${CONFIG.LOG_PREFIX} Initializing...`);
+        
+        // Проверяем внешнюю реализацию
+        if (typeof window.initSearchRangeSliders === 'function') {
+            console.log(`${CONFIG.LOG_PREFIX} Using external implementation`);
+            window.initSearchRangeSliders(document.querySelector(CONFIG.SELECTORS.FORM));
+            return;
+        }
+        
+        const form = document.querySelector(CONFIG.SELECTORS.FORM);
+        if (!form) {
+            console.warn(`${CONFIG.LOG_PREFIX} Form not found`);
+            return;
+        }
+        
+        const sliderElements = form.querySelectorAll(CONFIG.SELECTORS.SLIDER);
+        console.log(`${CONFIG.LOG_PREFIX} Found ${sliderElements.length} sliders`);
+        
+        if (sliderElements.length === 0) {
+            console.warn(`${CONFIG.LOG_PREFIX} No slider elements found`);
+            return;
+        }
+        
+        // Инициализируем все слайдеры
+        const sliders = [];
+        sliderElements.forEach((sliderElement, index) => {
+            const container = sliderElement.closest(CONFIG.SELECTORS.CONTAINER);
+            if (!container) {
+                console.error(`${CONFIG.LOG_PREFIX} Container not found for slider ${index + 1}`);
+                return;
+            }
+            
+            try {
+                const slider = new SmartRangeSlider(container, index);
+                if (slider.init()) {
+                    sliders.push(slider);
+                }
+            } catch (error) {
+                console.error(`${CONFIG.LOG_PREFIX} Error initializing slider ${index + 1}:`, error);
+            }
+        });
+        
+        console.log(`${CONFIG.LOG_PREFIX} Successfully initialized ${sliders.length}/${sliderElements.length} sliders`);
+        
+        // Сохраняем ссылку для отладки
+        window.rangeSliders = sliders;
+    }
+
+    function resetToDefaults() {
+        const initialMin = this.minLimit;
+        const initialMax = this.maxLimit;
+        
+        // Сбрасываем слайдер
+        this.slider.set([initialMin, initialMax]);
+        
+        // Обновляем предыдущие значения
+        this.previousValues.min = initialMin;
+        this.previousValues.max = initialMax;
+        
+        // Обновляем все поля
+        this.updateAllFields(initialMin, initialMax);
+        
+        console.log(`${CONFIG.LOG_PREFIX} Slider ${this.index + 1} reset to defaults`);
+        
+        // Генерируем событие сброса
+        const event = new CustomEvent('sliderReset', {
+            detail: { min: initialMin, max: initialMax, sliderIndex: this.index }
+        });
+        this.container.dispatchEvent(event);
+    }
+
+    // Инициализируем при загрузке DOM
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initRangeSliders);
+    } else {
+        initRangeSliders();
+    }
+
+    // Экспортируем для повторного использования
+    window.initRangeSliders = initRangeSliders;
+
+})();

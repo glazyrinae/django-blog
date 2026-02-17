@@ -1,10 +1,13 @@
 {% load sekizai_tags static %}
 
-<form id="{{ form_id }}" class="search-form" 
+<form id="{{ form_id }}" 
+      method=post
+      action="{% url 'search:search_result' %}"
+      class="search-form" 
       data-content-type="{{ config.content_type.id }}"
       data-config-id="{{ config.id }}"
       data-results-limit="{{ config.results_limit }}">
-    
+     {% csrf_token %}
     <!-- <div class="input-group mb-3">
         <input type="text" 
                class="form-control search-input" 
@@ -71,7 +74,7 @@
 </form>
 
 <!-- Результаты поиска -->
-<div class="search-results mt-3" id="results-{{ form_id }}">
+{% comment %} <div class="search-results mt-3" id="results-{{ form_id }}">
     <div class="search-loading">
         <div class="spinner-border spinner-border-sm" role="status">
             <span class="visually-hidden">Загрузка...</span>
@@ -79,7 +82,7 @@
         <span class="ms-2">Поиск...</span>
     </div>
     <div class="search-results-list"></div>
-</div>
+</div> {% endcomment %}
 
 
 {% addtoblock "js_header" %}

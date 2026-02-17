@@ -48,6 +48,7 @@ def render_search_panel(context, config_name=None, content_type=None):
         {
             "config": config,
             "fields": fields,
+            "filters": context.get("filters", []),
             "form_id": form_id,
             "request": request,
         }

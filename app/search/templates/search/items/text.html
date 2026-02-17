@@ -23,6 +23,7 @@
                 <input type="text" 
                         class="form-control" 
                         name="{{ field.field_name }}"
+                        value="{{ filters.title|default:'' }}"
                         placeholder="{{ field.placeholder|default:'' }}"
                         {% if field.is_required %}required{% endif %}>
             </div>

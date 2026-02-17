@@ -30,6 +30,7 @@
                 <select class="form-control {{ field.field_type }}" 
                         data-field-type="select"
                         data-field-id="{{ field.id }}"
+                        data-selected="{{ filters.status }}"
                         name="{{ field.field_name }}"
                         {% if multiple %}multiple{% endif %}
                         data-placeholder="Выберите...">

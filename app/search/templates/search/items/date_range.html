@@ -38,6 +38,7 @@
                                         name="{{ field.field_name }}_min" 
                                         data-range="{{ field.id }}"
                                         placeholder="{{ field.placeholder|default:'дд.мм.гггг' }}"
+                                        value="{{filters.created_min}}"
                                         data-index="{{ field.id }}">
                                 <span class="input-group-text">📅</span>
                             </div>
@@ -50,6 +51,7 @@
                                         name="{{ field.field_name }}_max"
                                         data-range="{{ field.id }}"
                                         placeholder="{{ field.placeholder|default:'дд.мм.гггг' }}"
+                                        value="{{filters.created_max}}"
                                         data-index="{{ field.id }}">
                                 <span class="input-group-text">📅</span>
                             </div>

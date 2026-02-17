@@ -3,8 +3,8 @@ class UniversalSearch {
     constructor(formElement) {
         this.form = formElement;
         this.resultsContainer = document.querySelector(`#results-${this.form.id}`);
-        this.resultsList = this.resultsContainer.querySelector('.search-results-list');
-        this.loadingElement = this.resultsContainer.querySelector('.search-loading');
+        //this.resultsList = this.resultsContainer.querySelector('.search-results-list');
+        //this.loadingElement = this.resultsContainer.querySelector('.search-loading');
         this.configId = this.form.dataset.configId;
         this.contentTypeId = this.form.dataset.contentType;
         this.resultsLimit = this.form.dataset.resultsLimit || 10;
@@ -37,23 +37,39 @@ class UniversalSearch {
     }
     
     populateFieldChoices(fieldElement, choices, fieldType) {
-        if (fieldType === 'select') {
-            const select = fieldElement;
-            if (select) {
-                // Очищаем существующие опции кроме первой
-                while (select.options.length > 1) {
-                    select.remove(1);
-                }
-                
-                // Добавляем новые опции
-                choices.forEach(choice => {
-                    const option = document.createElement('option');
-                    option.value = choice.value;
-                    option.textContent = choice.label;
-                    select.appendChild(option);
-                });
+if (fieldType === 'select') {
+    const select = fieldElement;
+    if (select) {
+        // Получаем выбранные значения из data-selected
+        const selectedValues = select.dataset.selected 
+            ? select.dataset.selected.split(',').map(v => v.trim()) 
+            : [];
+        
+        // Очищаем существующие опции кроме первой
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+        
+        // Добавляем новые опции
+        choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.value;
+            option.textContent = choice.label;
+            
+            // Устанавливаем selected для всех подходящих значений
+            if (selectedValues.includes(String(choice.value))) {
+                option.selected = true;
             }
-        } else if (fieldType === 'radio') {
+            
+            select.appendChild(option);
+        });
+        
+        // ЕСЛИ ИСПОЛЬЗУЕТСЯ SELECT2 - ОБНОВЛЯЕМ
+        if (typeof $ !== 'undefined' && $(select).data('select2')) {
+            $(select).trigger('change');  // Просто триггерим change для обновления
+        }
+    }
+} else if (fieldType === 'radio') {
             const container = fieldElement;
             // Очищаем существующие радиокнопки
             container.innerHTML = `<label class="form-label">${fieldElement.dataset.label || 'Выберите'}</label>`;
@@ -80,10 +96,11 @@ class UniversalSearch {
 
     init() {
         // Событие отправки формы
-        this.form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.performSearch();
-        });
+        // this.form.addEventListener('submit', (e) => {
+        //     e.preventDefault();
+        //     alert('!!!');
+        //     //this.performSearch();
+        // });
         
         // Событие очистки
         const clearBtn = this.form.querySelector('.search-clear');
@@ -166,10 +183,19 @@ class UniversalSearch {
 
         // Собираем все поля из формы (single/multiple)
         for (const [key, value] of formData.entries()) {
+
+            const element = document.querySelector(`[name="${key}"]`);
+            const elementType = element ? element.type || element.tagName.toLowerCase() : 'unknown';
             if (!value?.trim()) continue;
 
             if (data[key] === undefined) {
-                data[key] = [value];
+                if (elementType != "text"){
+                    data[key] = [value];
+                }
+                else {
+                    data[key] = value;
+                }
+                console.log(elementType)
                 continue;
             }
 
@@ -366,6 +392,8 @@ class UniversalSearch {
     clearSearch() {
         this.form.reset();
         this.hideResults();
+        this.resetAllSliders(); 
+        this.resetAllSelect2();
         this.resultsList.innerHTML = '';
     }
     
@@ -377,6 +405,82 @@ class UniversalSearch {
         `;
     }
     
+    resetAllSliders() {
+        // Находим все слайдеры
+        document.querySelectorAll('.slider').forEach(sliderElement => {
+            try {
+                // Получаем родительский контейнер
+                const container = sliderElement.closest('.range-slider-wrapper');
+                if (!container) return;
+                
+                // Получаем исходные значения из data-атрибутов
+                const minLimit = parseInt(container.dataset.min) || 0;
+                const maxLimit = parseInt(container.dataset.max) || 100;
+                
+                // Сбрасываем слайдер
+                if (sliderElement.noUiSlider) {
+                    sliderElement.noUiSlider.set([minLimit, maxLimit]);
+                }
+                
+                // Сбрасываем связанные поля
+                const minInput = container.querySelector('.slider-min-input');
+                const maxInput = container.querySelector('.slider-max-input');
+                const minDisplay = container.querySelector('.slider-value-min');
+                const maxDisplay = container.querySelector('.slider-value-max');
+                const minHidden = container.querySelector('.slider-hidden-min');
+                const maxHidden = container.querySelector('.slider-hidden-max');
+                
+                if (minInput) minInput.value = minLimit;
+                if (maxInput) maxInput.value = maxLimit;
+                if (minDisplay) minDisplay.textContent = minLimit;
+                if (maxDisplay) maxDisplay.textContent = maxLimit;
+                if (minHidden) minHidden.value = minLimit;
+                if (maxHidden) maxHidden.value = maxLimit;
+                
+            } catch (error) {
+                console.error('Error resetting slider:', error);
+            }
+        });
+        
+        console.log('All sliders reset to default values');
+    }
+
+    resetAllSelect2() {
+        document.querySelectorAll('select.select, select.select_multiple').forEach(selectElement => {
+            try {
+                // Проверяем, инициализирован ли Select2
+                const $select = $(selectElement);
+                if (!$select.data('select2')) {
+                    console.warn('Select2 not initialized for:', selectElement);
+                    return;
+                }
+                
+                // Получаем оригинальное значение из data-атрибута или используем пустое
+                const defaultValue = selectElement.dataset.defaultValue || '';
+                
+                // Для одиночного выбора
+                if (selectElement.classList.contains('select')) {
+                    $select.val(defaultValue).trigger('change');
+                }
+                
+                // Для множественного выбора
+                else if (selectElement.classList.contains('select_multiple')) {
+                    if (defaultValue && defaultValue !== '') {
+                        // Если есть значения по умолчанию через запятую
+                        const values = defaultValue.split(',').map(v => v.trim()).filter(v => v);
+                        $select.val(values).trigger('change');
+                    } else {
+                        // Пустой массив для множественного выбора
+                        $select.val([]).trigger('change');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error resetting Select2:', error);
+            }
+        });
+    }
+
     getCsrfToken() {
         const cookieValue = document.cookie
             .split('; ')
