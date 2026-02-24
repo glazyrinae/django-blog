@@ -4,7 +4,7 @@ from django.db import models
 
 logger = logging.getLogger("settings")
 
-        
+
 class BlogSettings(models.Model):
     """Global blog settings and configuration."""
 
@@ -24,6 +24,7 @@ class BlogSettings(models.Model):
 
     def __repr__(self):
         return f"<BlogSettings: {self.blog_title}>"
+
 
 class SocialMedia(models.Model):
     """Social media links associated with blog settings."""
@@ -45,11 +46,11 @@ class SocialMedia(models.Model):
     )
     url_link = models.URLField(max_length=250, verbose_name="URL")
     blog_settings = models.ForeignKey(
-        BlogSettings, 
-        on_delete=models.CASCADE, 
-        related_name="social_media",         
+        BlogSettings,
+        on_delete=models.CASCADE,
+        related_name="social_media",
         null=False,
-        blank=False
+        blank=False,
     )
 
     class Meta:

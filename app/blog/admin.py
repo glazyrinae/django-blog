@@ -1,8 +1,8 @@
 import logging
 
-from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
+
 from .models import Category, Images, Post
 
 logger = logging.getLogger("blog")
@@ -11,6 +11,7 @@ logger = logging.getLogger("blog")
 THUMBNAIL_SIZE = (350, 200)
 TEXT_ROWS = 20
 FONT_SIZE = 16
+
 
 class ImageInline(admin.StackedInline):
     model = Images
@@ -24,7 +25,6 @@ class ImageInline(admin.StackedInline):
                 f'<img src="{obj.thumbnail.url}" width="{THUMBNAIL_SIZE[0]}" height="{THUMBNAIL_SIZE[1]}" />'
             )
         return "-"
-
 
 
 @admin.register(Category)
@@ -41,9 +41,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
     def delete_model(self, request, obj):
         """Log category deletion."""
-        logger.warning(
-            f"Admin {request.user.username} deleted category: {obj.title}"
-        )
+        logger.warning(f"Admin {request.user.username} deleted category: {obj.title}")
         super().delete_model(request, obj)
 
 

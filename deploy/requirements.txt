@@ -1,9 +1,12 @@
 Django==5
 gunicorn==21.2.0
-psycopg2-binary==2.9.6
+# 2.9.6 doesn't ship Python 3.12 wheels, so pip tries to build from source (needs `pg_config`).
+# Use a newer version with cp312 wheels for local installs.
+psycopg2-binary>=2.9.9,<3.0
 django-taggit==3.0.0
 django-sekizai
-Pillow==9.2.0
+# Pillow 9.2.0 doesn't have cp312 wheels; use a newer version for Python 3.12.
+Pillow>=10.0.0,<12.0
 markdown==3.4.1
 #django-db-logger==0.1.13
 marshmallow==3.19.0
@@ -11,5 +14,6 @@ environs[django]>=9.0.0
 dj-database-url==1.2.0
 django-extensions==3.2.1
 django-debug-toolbar==5.2.0
+ruff
 python-lsp-server[all]
 pylsp-mypy

@@ -7,4 +7,4 @@ class BlogConfig(AppConfig):
 
     def ready(self):
         # Импортируем сигналы
-        import blog.signals
+        pass

@@ -1,9 +1,11 @@
-from django.db import models
-from django.utils import timezone
+from typing import TYPE_CHECKING, Literal, Self, cast
+
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from taggit.managers import TaggableManager
-from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 
 class PublishedManager(models.Manager):
@@ -52,7 +54,6 @@ class SocialMedia(models.Model):
 
 
 class Category(models.Model):
-
     TYPE_POSTS = "posts"  # ← ЭТО КОНСТАНТА
     TYPE_PAGE = "page"  # ← И ЭТО ТОЖЕ КОНСТАНТА
 
@@ -73,6 +74,9 @@ class Category(models.Model):
 
 
 class Post(models.Model):
+    if TYPE_CHECKING:
+        images: models.Manager["Images"]
+
     tags = TaggableManager()
 
     class Status(models.TextChoices):
@@ -110,6 +114,8 @@ class Post(models.Model):
         return self.title
 
     def get_absolute_url(self):
+        if self.category is None:
+            raise ValueError("Post.category is None; cannot build absolute URL")
         return reverse(
             "blog:post_detail",
             args=[
@@ -144,27 +150,33 @@ class Post(models.Model):
 
     @classmethod
     def get_prev_next_posts(
-        cls, url_path: str, pk: int, option: str, sorted_by_pk: str
-    ) -> tuple:
+        cls,
+        url_path: str,
+        pk: int,
+        option: Literal["next", "prev"],
+        sorted_by_pk: str,
+    ) -> Self | None:
         if option == "next":
-            return (
+            return cast(
+                Self | None,
                 cls.objects.filter(
                     category__url_path=url_path,
                     status=cls.Status.PUBLISHED,
                     pk__gt=pk,
                 )
                 .order_by(sorted_by_pk)
-                .first()
+                .first(),
             )
         else:
-            return (
+            return cast(
+                Self | None,
                 cls.objects.filter(
                     category__url_path=url_path,
                     status=cls.Status.PUBLISHED,
                     pk__lt=pk,
                 )
                 .order_by(sorted_by_pk)
-                .first()
+                .first(),
             )
 
     @property
@@ -191,6 +203,12 @@ class Post(models.Model):
 
 
 class Images(models.Model):
+    if TYPE_CHECKING:
+        pk: int | None
+        post_id: int | None
+
+        def get_image_type_display(self) -> str: ...
+
     IMAGE_TYPE_CHOICES = [
         ("main", "Основное изображение"),
         ("secondary", "Дополнительное"),
@@ -209,3 +227,8 @@ class Images(models.Model):
         default="secondary",
         verbose_name="Тип изображения",
     )
+
+    def __str__(self) -> str:
+        image_id = self.pk if self.pk is not None else "unsaved"
+        post_id = self.post_id if self.post_id is not None else "unsaved"
+        return f"{self.get_image_type_display()} (id={image_id}) для поста id={post_id}"

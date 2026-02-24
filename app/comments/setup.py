@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-from setuptools import setup, find_packages
 import os
 
+from setuptools import find_packages, setup
+
 # Читаем README.md для long_description
-with open("README.md", "r", encoding="utf-8") as fh:
+with open("README.md", encoding="utf-8") as fh:
     long_description = fh.read()
 
 # Читаем requirements.txt
-with open("requirements.txt", "r", encoding="utf-8") as fh:
+with open("requirements.txt", encoding="utf-8") as fh:
     requirements = [
         line.strip() for line in fh if line.strip() and not line.startswith("#")
     ]
@@ -18,7 +19,7 @@ def get_version():
     init_path = os.path.join(
         os.path.dirname(__file__), "django_simple_ratings", "__init__.py"
     )
-    with open(init_path, "r", encoding="utf-8") as f:
+    with open(init_path, encoding="utf-8") as f:
         for line in f:
             if line.startswith("__version__"):
                 return line.split("=")[1].strip().strip('"').strip("'")

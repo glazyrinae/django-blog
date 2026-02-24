@@ -1,6 +1,8 @@
+import re
+
 from django import forms
 from django.utils import timezone
-import re
+
 from .models import Comment
 
 

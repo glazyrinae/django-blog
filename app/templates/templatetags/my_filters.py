@@ -1,7 +1,7 @@
 import markdown
 from django import template
-from django.utils.safestring import mark_safe
 from django.utils.html import strip_tags
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -49,8 +49,10 @@ def markdown_filter(value):
 
 
 @register.filter(name="plural")
-def choose_plural(amount: int, variants: list = ["пост", "поста", "постов"]) -> str:
-    if isinstance(variants, list) and len(variants) == 3:
+def choose_plural(
+    amount: int, variants: tuple[str, str, str] = ("пост", "поста", "постов")
+) -> str:
+    if len(variants) == 3:
         if amount % 10 == 1 and amount % 100 != 11:
             variant = 0
         elif (

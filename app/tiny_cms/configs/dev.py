@@ -1,10 +1,36 @@
-# myproject/settings/dev.py
-from .base import *
-from pathlib import Path
 import os
+from pathlib import Path
 
-INSTALLED_APPS += ["debug_toolbar"]
-MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+from . import base as _base
+
+BASE_DIR = _base.BASE_DIR
+SECRET_KEY = _base.SECRET_KEY
+DEBUG = _base.DEBUG
+ALLOWED_HOSTS = _base.ALLOWED_HOSTS
+
+INSTALLED_APPS = [*_base.INSTALLED_APPS, "debug_toolbar"]
+MIDDLEWARE = ["debug_toolbar.middleware.DebugToolbarMiddleware", *_base.MIDDLEWARE]
+
+ROOT_URLCONF = _base.ROOT_URLCONF
+TEMPLATES = _base.TEMPLATES
+WSGI_APPLICATION = _base.WSGI_APPLICATION
+
+DATABASES = _base.DATABASES
+AUTH_PASSWORD_VALIDATORS = _base.AUTH_PASSWORD_VALIDATORS
+
+LANGUAGE_CODE = _base.LANGUAGE_CODE
+TIME_ZONE = _base.TIME_ZONE
+USE_I18N = _base.USE_I18N
+USE_TZ = _base.USE_TZ
+
+STATIC_URL = _base.STATIC_URL
+STATICFILES_DIRS = list(_base.STATICFILES_DIRS)
+STATIC_ROOT = _base.STATIC_ROOT
+
+DEFAULT_AUTO_FIELD = _base.DEFAULT_AUTO_FIELD
+
+MEDIA_URL = _base.MEDIA_URL
+MEDIA_ROOT = _base.MEDIA_ROOT
 
 # Раскомментируйте или добавьте:
 DEBUG_TOOLBAR_CONFIG = {

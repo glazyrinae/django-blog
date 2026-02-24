@@ -1,10 +1,10 @@
-from django.db import models
+import uuid
+
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.conf import settings
+from django.db import models
 from django.utils import timezone
-import uuid
-import json
 
 
 class Comment(models.Model):

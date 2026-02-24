@@ -1,19 +1,18 @@
 # search/views.py
 import json
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
 from datetime import datetime
+
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.views import View
-from django.shortcuts import render, redirect
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.views.decorators.http import require_POST
+
 from .models import SearchConfig, SearchField
 
 
 class ListItems(View):
-
     def _get_ordering(self, request):
         """Определяет порядок сортировки"""
         order_by = request.GET.get("order_by", "-created")
@@ -325,7 +324,7 @@ def get_field_choices(request, config_id, field_id):
                         for choice in custom_choices
                     ]
 
-        except Exception as e:
+        except Exception:
             # Если не удалось получить из модели, используем сохраненные choices
             choices_dict = field.get_choices_dict()
             choices = [

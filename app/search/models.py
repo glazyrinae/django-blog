@@ -1,11 +1,20 @@
 # search/models.py
-from django.db import models
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.db import models
+
+if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
 
 
 class SearchConfig(models.Model):
     """Конфигурация панели поиска"""
+
+    if TYPE_CHECKING:
+        fields: RelatedManager[SearchField]
 
     PANEL_POSITIONS = [
         ("top", "Верхняя панель"),

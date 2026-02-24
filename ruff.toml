@@ -4,6 +4,16 @@ target-version = "py312"
 # Длина строки
 line-length = 88
 
+# Пути, которые считаем "проектными" (first-party) для импорта/isort
+src = ["app"]
+
+# Ruff уже исключает по умолчанию `.git`, `.venv`, `__pycache__` и т.п.
+# Здесь добавляем специфичные для Django-проекта директории.
+extend-exclude = [
+    "**/migrations/**",
+    "staticfiles/**",
+]
+
 [lint]
 # Включаем правила
 select = [
@@ -22,28 +32,3 @@ ignore = [
     "E501",  # line too long (handled by formatter)
     "B008",  # do not perform function calls in argument defaults
 ]
-
-# Исключаем файлы/папки из проверки
-exclude = [
-    ".git",
-    "__pycache__",
-    ".venv",
-    "migrations",
-    "migrations",
-    "staticfiles",
-]
-
-[tool.djlint]
-profile="django"
-indent=4
-max_line_length=120
-format_attribute_template_tags=true
-format_css=true
-format_js=true
-ignore="H006,H030,H031"
-
-[tool.djlint.css]
-indent_size=4
-
-[tool.djlint.js]
-indent_size=4

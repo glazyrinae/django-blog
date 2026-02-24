@@ -5,7 +5,6 @@ import os
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
 from uuid import uuid4
 
 from django.apps import apps
@@ -51,7 +50,7 @@ def generate_unique_filename(original_filename: str) -> str:
     return result_path
 
 
-def remove_file_if_exists(file_path: Optional[str]) -> None:
+def remove_file_if_exists(file_path: str | None) -> None:
     """
     Safely remove file if it exists.
 
@@ -125,7 +124,7 @@ def cleanup_old_files(instance, old_instance) -> bool:
     if instance.image and old_instance.image and instance.image == old_instance.image:
         logger.info(f"Old and New image are same: {old_instance.image.path}")
         return False
-    
+
     # Cleanup old main image
     if instance.image and old_instance.image and instance.image != old_instance.image:
         logger.info(f"Removing old image: {old_instance.image.path}")

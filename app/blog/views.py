@@ -1,9 +1,11 @@
 import logging
+
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import Http404
-from django.shortcuts import render, get_object_or_404
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .models import Post, Category
-from .utils import validate_search_query, check_rate_limit
+from django.shortcuts import get_object_or_404, render
+
+from .models import Category, Post
+from .utils import check_rate_limit, validate_search_query
 
 POSTS_PER_PAGE = 3
 logger = logging.getLogger("blog")

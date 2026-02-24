@@ -1,15 +1,15 @@
-from django.shortcuts import get_object_or_404
-from django.views.generic import View
-from django.http import JsonResponse
-from django.contrib.contenttypes.models import ContentType
-from django.core.paginator import Paginator
-from django.db.models import Q
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
-import json
+from django.views.generic import View
 
+from .forms import AdminReplyForm, CommentForm
 from .models import Comment
-from .forms import CommentForm, AdminReplyForm
 
 
 class CommentListView(View):
@@ -56,7 +56,7 @@ class CommentListView(View):
 
         try:
             page_obj = paginator.page(page)
-        except:
+        except (PageNotAnInteger, EmptyPage):
             return JsonResponse(
                 {"success": False, "error": "Страница не найдена"}, status=404
             )
@@ -154,14 +154,15 @@ class SubmitCommentView(View):
 
         try:
             content_object = content_type.get_object_for_this_type(pk=object_id)
-        except:
+        except ObjectDoesNotExist:
             return JsonResponse(
                 {"success": False, "error": "Объект не найден"}, status=404
             )
 
         # Проверка частоты отправки
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
 
         recent_limit = timezone.now() - timedelta(hours=1)
         ip = request.META.get("REMOTE_ADDR")
@@ -330,7 +331,7 @@ class StatisticsView(View):
 
         try:
             content_object = content_type.get_object_for_this_type(pk=object_id)
-        except:
+        except ObjectDoesNotExist:
             return JsonResponse(
                 {"success": False, "error": "Объект не найден"}, status=404
             )

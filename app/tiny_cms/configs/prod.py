@@ -1,24 +1,47 @@
-# myproject/settings/production.py
-from .base import *
 import os
+from pathlib import Path
+
+from . import base as _base
+
+BASE_DIR = _base.BASE_DIR
+SECRET_KEY = _base.SECRET_KEY
+DEBUG = _base.DEBUG
+ALLOWED_HOSTS = _base.ALLOWED_HOSTS
+
+INSTALLED_APPS = list(_base.INSTALLED_APPS)
+MIDDLEWARE = list(_base.MIDDLEWARE)
+
+ROOT_URLCONF = _base.ROOT_URLCONF
+TEMPLATES = _base.TEMPLATES
+WSGI_APPLICATION = _base.WSGI_APPLICATION
+
+DATABASES = _base.DATABASES
+AUTH_PASSWORD_VALIDATORS = _base.AUTH_PASSWORD_VALIDATORS
+
+LANGUAGE_CODE = _base.LANGUAGE_CODE
+TIME_ZONE = _base.TIME_ZONE
+USE_I18N = _base.USE_I18N
+USE_TZ = _base.USE_TZ
+
+STATIC_URL = _base.STATIC_URL
+STATICFILES_DIRS = list(_base.STATICFILES_DIRS)
+STATIC_ROOT = _base.STATIC_ROOT
+
+DEFAULT_AUTO_FIELD = _base.DEFAULT_AUTO_FIELD
+
+MEDIA_URL = _base.MEDIA_URL
+MEDIA_ROOT = _base.MEDIA_ROOT
 
 # Безопасность
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# Для production
 CSRF_TRUSTED_ORIGINS = [
-    'https://dl-blog.ru',
-    'https://www.dl-blog.ru',
-]
-
-# Или для разработки + production
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
-    'http://127.0.0.1:8000', 
-    'https://dl-blog.ru',
-    'https://www.dl-blog.ru',
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://dl-blog.ru",
+    "https://www.dl-blog.ru",
 ]
 # Logging Configuration
 # https://docs.djangoproject.com/en/5.1/topics/logging/
@@ -120,12 +143,12 @@ LOGGING = {
         # Application loggers
         "blog": {
             "handlers": ["console", "file_blog", "file_errors"],
-            "level":  "ERROR",
+            "level": "ERROR",
             "propagate": False,
         },
         "settings": {
             "handlers": ["console", "file_settings", "file_errors"],
-            "level":  "ERROR",
+            "level": "ERROR",
             "propagate": False,
         },
     },

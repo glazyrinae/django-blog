@@ -1,5 +1,5 @@
-from django.contrib import admin
 from django import forms
+from django.contrib import admin
 
 from .models import BlogSettings, SocialMedia
 
@@ -9,6 +9,7 @@ FORM_ATTRS = {
     "cols": 60,
     "style": "font-family: monospace;",
 }
+
 
 class SocialMediaInline(admin.StackedInline):
     """Inline admin for social media links."""
@@ -40,9 +41,7 @@ class BlogSettingsAdmin(admin.ModelAdmin):
 
         # Customize blog description field
         if "blog_desc" in form.base_fields:
-            form.base_fields["blog_desc"].widget = forms.Textarea(
-                attrs=FORM_ATTRS
-            )
+            form.base_fields["blog_desc"].widget = forms.Textarea(attrs=FORM_ATTRS)
 
         return form
 

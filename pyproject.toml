@@ -1,0 +1,14 @@
+[tool.djlint]
+profile = "django"
+indent = 4
+max_line_length = 120
+format_attribute_template_tags = true
+format_css = true
+format_js = true
+ignore = "H006,H030,H031"
+
+[tool.djlint.css]
+indent_size = 4
+
+[tool.djlint.js]
+indent_size = 4
