@@ -89,13 +89,13 @@ class ListItems(View):
 
             elif field.field_type == "date_range":
                 if date_min := search_data.get(f"{field_name}_min"):
-                    date_min = datetime.strptime(date_min, "%d.%m.%Y").date()
+                    date_min_obj = datetime.strptime(date_min, "%d.%m.%Y").date()
+                    query &= Q(**{f"{field_name}__gte": date_min_obj})
                     filters.update({f"{field_name}_min": date_min})
-                    query &= Q(**{f"{field_name}__gte": date_min})
                 if date_max := search_data.get(f"{field_name}_max"):
-                    date_max = datetime.strptime(date_max, "%d.%m.%Y").date()
+                    date_max_obj = datetime.strptime(date_max, "%d.%m.%Y").date()
+                    query &= Q(**{f"{field_name}__lte": date_max_obj})
                     filters.update({f"{field_name}_max": date_max})
-                    query &= Q(**{f"{field_name}__lte": date_max})
 
             elif field.field_type == "range":
                 if rating_min := search_data.get(f"{field_name}_min"):

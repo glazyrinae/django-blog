@@ -3,8 +3,12 @@ class UniversalSearch {
     constructor(formElement) {
         this.form = formElement;
         this.resultsContainer = document.querySelector(`#results-${this.form.id}`);
-        //this.resultsList = this.resultsContainer.querySelector('.search-results-list');
-        //this.loadingElement = this.resultsContainer.querySelector('.search-loading');
+        this.resultsList = this.resultsContainer
+            ? this.resultsContainer.querySelector('.search-results-list')
+            : null;
+        this.loadingElement = this.resultsContainer
+            ? this.resultsContainer.querySelector('.search-loading')
+            : null;
         this.configId = this.form.dataset.configId;
         this.contentTypeId = this.form.dataset.contentType;
         this.resultsLimit = this.form.dataset.resultsLimit || 10;
@@ -95,12 +99,10 @@ if (fieldType === 'select') {
     }
 
     init() {
-        // Событие отправки формы
-        // this.form.addEventListener('submit', (e) => {
-        //     e.preventDefault();
-        //     alert('!!!');
-        //     //this.performSearch();
-        // });
+        // Перед submit нормализуем значения range: если стоят дефолты, не отправляем их.
+        this.form.addEventListener('submit', () => {
+            this.normalizeRangeForSubmit();
+        });
         
         // Событие очистки
         const clearBtn = this.form.querySelector('.search-clear');
@@ -284,6 +286,7 @@ if (fieldType === 'select') {
     }
     
     displayResults(result) {
+        if (!this.resultsList) return;
         this.resultsList.innerHTML = '';
         
         if (!result.success) {
@@ -374,30 +377,44 @@ if (fieldType === 'select') {
     }
     
     showLoading() {
-        this.loadingElement.style.display = 'block';
+        if (this.loadingElement) {
+            this.loadingElement.style.display = 'block';
+        }
     }
     
     hideLoading() {
-        this.loadingElement.style.display = 'none';
+        if (this.loadingElement) {
+            this.loadingElement.style.display = 'none';
+        }
     }
     
     showResults() {
-        this.resultsContainer.style.display = 'block';
+        if (this.resultsContainer) {
+            this.resultsContainer.style.display = 'block';
+        }
     }
     
     hideResults() {
-        this.resultsContainer.style.display = 'none';
+        if (this.resultsContainer) {
+            this.resultsContainer.style.display = 'none';
+        }
     }
     
     clearSearch() {
         this.form.reset();
         this.hideResults();
-        this.resetAllSliders(); 
+        this.resetAllSliders();
+        this.resetAllTextInputs();
+        this.resetAllDatePickers();
         this.resetAllSelect2();
-        this.resultsList.innerHTML = '';
+        this.collapseAllAccordions();
+        if (this.resultsList) {
+            this.resultsList.innerHTML = '';
+        }
     }
     
     displayError(message) {
+        if (!this.resultsList) return;
         this.resultsList.innerHTML = `
             <div class="alert alert-danger m-2">
                 ${message}
@@ -406,8 +423,8 @@ if (fieldType === 'select') {
     }
     
     resetAllSliders() {
-        // Находим все слайдеры
-        document.querySelectorAll('.slider').forEach(sliderElement => {
+        // Находим слайдеры внутри этой формы
+        this.form.querySelectorAll('.slider').forEach(sliderElement => {
             try {
                 // Получаем родительский контейнер
                 const container = sliderElement.closest('.range-slider-wrapper');
@@ -421,22 +438,6 @@ if (fieldType === 'select') {
                 if (sliderElement.noUiSlider) {
                     sliderElement.noUiSlider.set([minLimit, maxLimit]);
                 }
-                
-                // Сбрасываем связанные поля
-                const minInput = container.querySelector('.slider-min-input');
-                const maxInput = container.querySelector('.slider-max-input');
-                const minDisplay = container.querySelector('.slider-value-min');
-                const maxDisplay = container.querySelector('.slider-value-max');
-                const minHidden = container.querySelector('.slider-hidden-min');
-                const maxHidden = container.querySelector('.slider-hidden-max');
-                
-                if (minInput) minInput.value = minLimit;
-                if (maxInput) maxInput.value = maxLimit;
-                if (minDisplay) minDisplay.textContent = minLimit;
-                if (maxDisplay) maxDisplay.textContent = maxLimit;
-                if (minHidden) minHidden.value = minLimit;
-                if (maxHidden) maxHidden.value = maxLimit;
-                
             } catch (error) {
                 console.error('Error resetting slider:', error);
             }
@@ -446,37 +447,102 @@ if (fieldType === 'select') {
     }
 
     resetAllSelect2() {
-        document.querySelectorAll('select.select, select.select_multiple').forEach(selectElement => {
+        this.form.querySelectorAll('select.select, select.select_multiple').forEach(selectElement => {
             try {
-                // Проверяем, инициализирован ли Select2
-                const $select = $(selectElement);
-                if (!$select.data('select2')) {
-                    console.warn('Select2 not initialized for:', selectElement);
-                    return;
-                }
-                
-                // Получаем оригинальное значение из data-атрибута или используем пустое
-                const defaultValue = selectElement.dataset.defaultValue || '';
-                
-                // Для одиночного выбора
-                if (selectElement.classList.contains('select')) {
-                    $select.val(defaultValue).trigger('change');
-                }
-                
-                // Для множественного выбора
-                else if (selectElement.classList.contains('select_multiple')) {
-                    if (defaultValue && defaultValue !== '') {
-                        // Если есть значения по умолчанию через запятую
-                        const values = defaultValue.split(',').map(v => v.trim()).filter(v => v);
-                        $select.val(values).trigger('change');
-                    } else {
-                        // Пустой массив для множественного выбора
-                        $select.val([]).trigger('change');
+                // Если Select2 инициализирован — сбрасываем через него, иначе нативно.
+                if (typeof $ !== 'undefined') {
+                    const $select = $(selectElement);
+                    if ($select.data('select2')) {
+                        if (selectElement.classList.contains('select_multiple')) {
+                            $select.val([]).trigger('change');
+                        } else {
+                            $select.val(null).trigger('change');
+                        }
+                        return;
                     }
+                }
+
+                // Fallback: нативный select
+                if (selectElement.multiple) {
+                    Array.from(selectElement.options).forEach((opt) => {
+                        opt.selected = false;
+                    });
+                } else {
+                    selectElement.selectedIndex = 0;
                 }
                 
             } catch (error) {
                 console.error('Error resetting Select2:', error);
+            }
+        });
+    }
+
+    resetAllDatePickers() {
+        // Очищаем поля date range и, если подключен bootstrap-datepicker, вызываем его API.
+        this.form.querySelectorAll('input.date-start, input.date-end').forEach((input) => {
+            try {
+                input.value = '';
+                if (typeof $ !== 'undefined') {
+                    const $input = $(input);
+                    if (typeof $input.datepicker === 'function') {
+                        // bootstrap-datepicker
+                        $input.datepicker('clearDates');
+                    }
+                }
+            } catch (error) {
+                console.error('Error resetting datepicker:', error);
+            }
+        });
+    }
+
+    resetAllTextInputs() {
+        // `form.reset()` возвращает значения к тем, что были в HTML (value="...").
+        // Для поисковых форм нам нужен "чистый" сброс, поэтому принудительно очищаем текстовые поля.
+        this.form
+            .querySelectorAll('input[type="text"], input[type="search"], textarea')
+            .forEach((el) => {
+                // Не трогаем date-range, они чистятся отдельно.
+                if (
+                    el.classList &&
+                    (el.classList.contains('date-start') || el.classList.contains('date-end'))
+                ) {
+                    return;
+                }
+                el.value = '';
+            });
+    }
+
+    collapseAllAccordions() {
+        // Возвращаем все поля в свернутое состояние (после очистки).
+        this.form.querySelectorAll('.accordion-collapse.show').forEach((collapseEl) => {
+            collapseEl.classList.remove('show');
+        });
+        this.form.querySelectorAll('.accordion-button').forEach((btn) => {
+            btn.classList.add('collapsed');
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    normalizeRangeForSubmit() {
+        // Если range на дефолтах — убираем hidden значения, чтобы сервер не фильтровал.
+        this.form.querySelectorAll('.range-slider-wrapper').forEach((container) => {
+            try {
+                const minLimit = parseInt(container.dataset.min) || 0;
+                const maxLimit = parseInt(container.dataset.max) || 100;
+
+                const minHidden = container.querySelector('.slider-hidden-min');
+                const maxHidden = container.querySelector('.slider-hidden-max');
+                if (!minHidden || !maxHidden) return;
+
+                const minVal = String(minHidden.value ?? '').trim();
+                const maxVal = String(maxHidden.value ?? '').trim();
+
+                if (minVal === String(minLimit) && maxVal === String(maxLimit)) {
+                    minHidden.value = '';
+                    maxHidden.value = '';
+                }
+            } catch (error) {
+                console.error('Error normalizing range for submit:', error);
             }
         });
     }

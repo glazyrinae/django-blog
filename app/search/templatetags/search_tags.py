@@ -1,10 +1,55 @@
 # search/templatetags/search_tags.py
+from __future__ import annotations
+
+from collections.abc import Mapping
+
 from django import template
 from django.contrib.contenttypes.models import ContentType
 
 from ..models import SearchConfig
 
 register = template.Library()
+
+
+@register.filter
+def dict_get(obj, key):
+    if obj is None or key is None:
+        return ""
+
+    # `QueryDict` and normal dict both implement `.get`.
+    get = getattr(obj, "get", None)
+    if callable(get):
+        return get(key, "")
+
+    if isinstance(obj, Mapping):
+        return obj.get(key, "")
+
+    return ""
+
+
+@register.filter
+def to_csv(value):
+    if value is None:
+        return ""
+    if isinstance(value, (list, tuple, set)):
+        return ",".join(str(v) for v in value if v not in (None, ""))
+    return str(value)
+
+
+@register.simple_tag
+def should_expand_range(
+    raw_min, raw_max, start_min, start_max, default_min, default_max
+):
+    def _s(value):
+        if value is None:
+            return ""
+        return str(value)
+
+    has_user_input = bool(raw_min) or bool(raw_max)
+    if not has_user_input:
+        return False
+
+    return (_s(start_min) != _s(default_min)) or (_s(start_max) != _s(default_max))
 
 
 @register.inclusion_tag("search/search_panel.html", takes_context=True)
@@ -43,7 +88,7 @@ def render_search_panel(context, config_name=None, content_type=None):
     fields = config.fields.filter(is_visible=True).order_by("order")
 
     # Генерируем ID для формы
-    form_id = f"search-form-{config.id}"
+    form_id = f"search-form-{config.pk}"
 
     base_context.update(
         {
