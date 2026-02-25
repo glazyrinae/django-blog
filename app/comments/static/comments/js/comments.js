@@ -34,7 +34,7 @@
             this.contentTypeId = this.container.dataset.contentTypeId;
             this.objectId = this.container.dataset.objectId;
             this.hasRating = this.container.dataset.hasRating === 'true';
-            
+            this.loadComments(true);
             // Инициализация компонентов
             this.initForm();
             this.initStars();
