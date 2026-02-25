@@ -6,11 +6,13 @@ from collections.abc import Mapping
 from datetime import datetime
 from typing import Any, cast
 
+from django.core.exceptions import FieldDoesNotExist
 from django.core.paginator import Paginator
 from django.db import models
 from django.db.models import Q
-from django.http import JsonResponse
-from django.shortcuts import render
+from django.http import JsonResponse, QueryDict
+from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views import View
 from django.views.decorators.http import require_POST
 
@@ -33,21 +35,65 @@ def _getattr(obj: Any, name: str, default: Any = None) -> Any:
 
 
 class ListItems(View):
-    def _get_ordering(self, request):
-        """Определяет порядок сортировки"""
-        order_by = request.GET.get("order_by", "-created")
-        allowed_orders = [
-            "name",
-            "-name",
-            "price",
-            "-price",
-            "created",
-            "-created",
-        ]
+    def _find_first_field(
+        self, model_class: type[models.Model], candidates: list[str]
+    ) -> str | None:
+        for name in candidates:
+            try:
+                model_class._meta.get_field(name)
+            except FieldDoesNotExist:
+                continue
+            else:
+                return name
+        return None
 
-        if order_by in allowed_orders:
-            return order_by
-        return "-created"
+    def _get_ordering_options(
+        self, model_class: type[models.Model]
+    ) -> list[dict[str, str]]:
+        """
+        Build ordering options based on actual fields of the model resolved via content_type.
+        """
+        created_field = self._find_first_field(
+            model_class,
+            ["created", "created_at", "publish", "published_at", "date_created"],
+        )
+        title_field = self._find_first_field(model_class, ["title", "name"])
+
+        options: list[dict[str, str]] = []
+
+        if created_field:
+            options.extend(
+                [
+                    {"value": f"-{created_field}", "label": "Сначала новые"},
+                    {"value": f"{created_field}", "label": "Сначала старые"},
+                ]
+            )
+
+        if title_field:
+            options.extend(
+                [
+                    {"value": f"{title_field}", "label": "По названию (А–Я)"},
+                    {"value": f"-{title_field}", "label": "По названию (Я–А)"},
+                ]
+            )
+
+        if not options:
+            options = [
+                {"value": "-pk", "label": "Сначала новые (ID)"},
+                {"value": "pk", "label": "Сначала старые (ID)"},
+            ]
+
+        return options
+
+    def _get_default_ordering(self, ordering_options: list[dict[str, str]]) -> str:
+        return ordering_options[0]["value"]
+
+    def _get_ordering(self, request, ordering_options: list[dict[str, str]]) -> str:
+        """Определяет порядок сортировки из GET, валидируя по доступным опциям."""
+        default_value = self._get_default_ordering(ordering_options)
+        order_by = request.GET.get("order_by") or default_value
+        allowed = {opt["value"] for opt in ordering_options}
+        return order_by if order_by in allowed else default_value
 
     def _get_filtered_queryset(self, request):
         """Приватный метод: получает отфильтрованный queryset"""
@@ -108,16 +154,22 @@ class ListItems(View):
         items = _objects(model_class).filter(query)
         return items, filters
 
-    def _prepare_context(self, request, items, filters):
+    def _prepare_context(self, request, items, filters, ordering_options, order_by):
         """Подготавливает контекст для шаблона"""
         # Статистика
         total_items = len(items)
+        order_by_label = next(
+            (opt["label"] for opt in ordering_options if opt["value"] == order_by),
+            order_by,
+        )
 
         return {
             "items": items,
             "filters": filters,
             "total_items": total_items,
-            "order_by": self._get_ordering(request),
+            "order_by": order_by,
+            "order_by_label": order_by_label,
+            "ordering_options": ordering_options,
         }
 
     def get(self, request, *args, **kwargs):
@@ -125,8 +177,12 @@ class ListItems(View):
         # Используем свои методы
         items, filters = self._get_filtered_queryset(request.GET)
 
+        model_class = cast(type[models.Model], items.model)
+        ordering_options = self._get_ordering_options(model_class)
+        order_by = self._get_ordering(request, ordering_options)
+
         # Сортировка
-        items = items.order_by(self._get_ordering(request))
+        items = items.order_by(order_by)
 
         # Пагинация
         page = request.GET.get("page", 1)
@@ -138,35 +194,39 @@ class ListItems(View):
             items_page = paginator.page(1)
 
         # Подготавливаем контекст
-        context = self._prepare_context(request, items_page, filters)
+        context = self._prepare_context(
+            request, items_page, filters, ordering_options, order_by
+        )
         context["items"] = items_page  # Обновляем items на пагинированные
-
+        context["order_by"] = order_by
         # Обычный HTML вывод
         return render(request, "search/search_result.html", context)
 
     def post(self, request, *args, **kwargs):
-        """Обработка POST запроса"""
-        # Используем свои методы
-        items, filters = self._get_filtered_queryset(request.POST)
-        # request.session['filters'] = filters
-        # Сортировка
-        items = items.order_by(self._get_ordering(request))
+        """
+        PRG: POST -> Redirect -> GET.
 
-        # Пагинация
-        page = request.GET.get("page", 1)
-        paginator = Paginator(items, 3)
+        Builds a querystring from submitted form values and redirects to the same
+        page so sorting/pagination work via URL without resubmitting POST.
+        """
+        q = QueryDict(mutable=True)
 
-        try:
-            items_page = paginator.page(page)
-        except:  # noqa: E722
-            items_page = paginator.page(1)
+        for key, values in request.POST.lists():
+            if key == "csrfmiddlewaretoken":
+                continue
+            cleaned = [v for v in values if v is not None and str(v).strip() != ""]
+            if not cleaned:
+                continue
+            q.setlist(key, cleaned)
 
-        # Подготавливаем контекст
-        context = self._prepare_context(request, items_page, filters)
-        context["items"] = items_page  # Обновляем items на пагинированные
+        # Always reset pagination when filters change.
+        q.pop("page", None)
 
-        # Обычный HTML вывод
-        return render(request, "search/search_result.html", context)
+        base_url = reverse("search:search_result")
+        query = q.urlencode()
+        if query:
+            return redirect(f"{base_url}?{query}")
+        return redirect(base_url)
 
 
 @require_POST

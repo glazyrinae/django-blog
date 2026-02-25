@@ -8,11 +8,11 @@
 {% endblock %}
 
 {% block content %}
-    {% load my_filters %}
+    {% load my_filters querystring_tags %}
 
     <section class="cta-section theme-bg-light py-5">
         <div class="container text-center single-col-max-width">
-            <h2 class="heading">В данном блоге доступно {{ cnt_posts|plural }} на разные темы</h2>
+            <h2 class="heading">В данном блоге доступно {{ total_items|plural }} на разные темы</h2>
         </div>
     </section>
 
@@ -21,36 +21,24 @@
 
             <!-- 🔽 Выпадающий список сортировки -->
             <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
-                <div class="fw-bold">Сортировать по: {{order_by}}</div>
+                <div class="fw-bold">Сортировать:</div>
                 <div class="dropdown">
                     <button class="btn btn-outline-secondary dropdown-toggle" 
                             type="button" 
                             id="sortDropdown" 
                             data-bs-toggle="dropdown" 
                             aria-expanded="false">
-                        {% if order_by == '-created' or not order_by %}
-                            Сначала новые
-                        {% elif order_by == 'created' %}
-                            Сначала старые
-                        {% elif order_by == 'title' %}
-                            По названию (А–Я)
-                        {% elif order_by == '-title' %}
-                            По названию (Я–А)
-                        {% else %}
-                            Выберите...
-                        {% endif %}
+                        {{ order_by_label }}
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="sortDropdown">
-                        <li><a class="dropdown-item {% if order_by == '-created' or not order_by %}active{% endif %}" 
-                               href="?order_by=-created">Сначала новые</a></li>
-                        <li><a class="dropdown-item {% if order_by == 'created' %}active{% endif %}" 
-                               href="?order_by=created">Сначала старые</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item {% if order_by == 'title' %}active{% endif %}" 
-                               href="?order_by=title">По названию (А–Я)</a></li>
-                        <li><a class="dropdown-item {% if order_by == '-title' %}active{% endif %}" 
-                               href="?order_by=-title">По названию (Я–А)</a></li>
-                        <!-- Добавьте другие опции при необходимости -->
+                        {% for opt in ordering_options %}
+                            <li>
+                                <a class="dropdown-item {% if order_by == opt.value %}active{% endif %}"
+                                   href="?{% querystring order_by=opt.value page=1 %}">
+                                    {{ opt.label }}
+                                </a>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>

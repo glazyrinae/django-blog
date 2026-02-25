@@ -8,6 +8,8 @@
       data-config-id="{{ config.id }}"
       data-results-limit="{{ config.results_limit }}">
      {% csrf_token %}
+    {# Preserve current ordering across PRG (POST -> redirect -> GET). #}
+    <input type="hidden" name="order_by" value="{{ request.GET.order_by|default:'' }}">
     <!-- <div class="input-group mb-3">
         <input type="text" 
                class="form-control search-input" 
