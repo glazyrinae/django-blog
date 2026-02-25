@@ -91,8 +91,11 @@ def post_detail(request, url_path: str, year: int, month: int, day: int, post: s
         status=Post.Status.PUBLISHED,
     )
 
+    if post_obj.category is None:
+        raise Http404("Post category is missing")
+
     # Проверяем соответствие категории в URL
-    if post_obj and post_obj.category.url_path != url_path:
+    if post_obj.category.url_path != url_path:
         raise Http404("Post not found in this category")
 
     context = {

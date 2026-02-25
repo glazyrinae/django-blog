@@ -1,8 +1,13 @@
 # search/views.py
+from __future__ import annotations
+
 import json
+from collections.abc import Mapping
 from datetime import datetime
+from typing import Any, cast
 
 from django.core.paginator import Paginator
+from django.db import models
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -10,6 +15,21 @@ from django.views import View
 from django.views.decorators.http import require_POST
 
 from .models import SearchConfig, SearchField
+
+
+def _require_model_class(content_type: Any) -> type[models.Model]:
+    model_class = content_type.model_class()
+    if model_class is None:
+        raise ValueError("content_type.model_class() returned None")
+    return cast(type[models.Model], model_class)
+
+
+def _objects[ModelT: models.Model](model_class: type[ModelT]) -> models.Manager[ModelT]:
+    return cast(models.Manager[ModelT], cast(Any, model_class).objects)
+
+
+def _getattr(obj: Any, name: str, default: Any = None) -> Any:
+    return getattr(obj, name, default)
 
 
 class ListItems(View):
@@ -31,19 +51,12 @@ class ListItems(View):
 
     def _get_filtered_queryset(self, request):
         """Приватный метод: получает отфильтрованный queryset"""
-
-        # config_id = data.get("config_id")
-        # content_type_id = data.get("content_type_id")
         search_data = request
-
         filters = {}
-        # limit = data.get("limit", 10)
-        # limit = int(limit)
-
         # Получаем конфигурацию
         config = SearchConfig.objects.get(is_active=True)
         # Получаем модель
-        model_class = config.content_type.model_class()
+        model_class = _require_model_class(config.content_type)
         # Строим запрос
         query = Q()
         search_fields = config.fields.filter(is_searchable=True)
@@ -92,9 +105,7 @@ class ListItems(View):
                     filters.update({f"{field_name}_max": rating_max})
                     query &= Q(**{f"{field_name}__lte": rating_max})
 
-        items = model_class.objects.filter(query)
-        print(filters)
-        print("===================================111")
+        items = _objects(model_class).filter(query)
         return items, filters
 
     def _prepare_context(self, request, items, filters):
@@ -163,10 +174,10 @@ def api_search(request):
     """API endpoint для поиска"""
 
     try:
-        data = json.loads(request.body)
+        data = cast(Mapping[str, Any], json.loads(request.body))
         config_id = data.get("config_id")
         content_type_id = data.get("content_type_id")
-        search_data = data.get("search_data", {})
+        search_data = cast(Mapping[str, Any], data.get("search_data", {}))
         limit = data.get("limit", 10)
         limit = int(limit)
 
@@ -176,7 +187,7 @@ def api_search(request):
         )
 
         # Получаем модель
-        model_class = config.content_type.model_class()
+        model_class = _require_model_class(config.content_type)
 
         # Строим запрос
         query = Q()
@@ -223,21 +234,30 @@ def api_search(request):
                     query &= Q(**{f"{field_name}__lte": date_max})
 
             elif field.field_type == "range":
-                if value[0]:
-                    query &= Q(**{f"{field_name}__gte": value[0]})
-                if value[1]:
-                    query &= Q(**{f"{field_name}__lte": value[1]})
+                if (
+                    isinstance(value, (list, tuple))
+                    and len(value) >= 2
+                    and (value[0] or value[1])
+                ):
+                    if value[0]:
+                        query &= Q(**{f"{field_name}__gte": value[0]})
+                    if value[1]:
+                        query &= Q(**{f"{field_name}__lte": value[1]})
 
         # Выполняем поиск
-        _q = model_class.objects.filter(query).query
-        results = model_class.objects.filter(query)[:limit]
+        qs = _objects(model_class).filter(query)
+        _q = qs.query
+        total = qs.count()
+        results = list(qs[:limit])
 
         # Формируем ответ
         formatted_results = []
         for obj in results:
+            get_absolute_url_name = "get_absolute_url"
+            get_absolute_url = _getattr(obj, get_absolute_url_name)
             formatted_results.append(
                 {
-                    "id": obj.id,
+                    "id": getattr(obj, "id", obj.pk),
                     "content_type": f"{obj._meta.app_label}.{obj._meta.model_name}",
                     "title": str(obj),
                     "description": (
@@ -245,11 +265,7 @@ def api_search(request):
                         if hasattr(obj, "description")
                         else ""
                     ),
-                    "url": (
-                        obj.get_absolute_url()
-                        if hasattr(obj, "get_absolute_url")
-                        else None
-                    ),
+                    "url": (get_absolute_url() if callable(get_absolute_url) else None),
                 }
             )
 
@@ -258,8 +274,8 @@ def api_search(request):
                 "success": True,
                 "query": str(_q),
                 "results": formatted_results,
-                "total": results.count(),
-                "has_more": results.count() >= limit,
+                "total": total,
+                "has_more": total > limit,
                 "show_count": config.show_results_count,
                 "search_id": f"{config_id}_{content_type_id}",
             }
@@ -278,7 +294,7 @@ def get_field_choices(request, config_id, field_id):
     """Получение вариантов выбора для поля из модели"""
     try:
         field = SearchField.objects.get(id=field_id, config_id=config_id)
-        model_class = field.config.content_type.model_class()
+        model_class = _require_model_class(field.config.content_type)
 
         choices = []
 
@@ -286,24 +302,37 @@ def get_field_choices(request, config_id, field_id):
         try:
             model_field = model_class._meta.get_field(field.field_name)
 
-            if hasattr(model_field, "choices") and model_field.choices:
+            choices_name = "choices"
+            raw_choices = _getattr(model_field, choices_name)
+            if callable(raw_choices):
+                raw_choices = raw_choices()
+
+            if raw_choices:
                 choices = [
                     {"value": choice[0], "label": choice[1]}
-                    for choice in model_field.choices
+                    for choice in cast(Any, raw_choices)
                 ]
             # Если поле BooleanField
             # Если поле ForeignKey
-            elif hasattr(model_field, "related_model"):
-                related_model = model_field.related_model
+            elif _getattr(model_field, "related_model", None) is not None:
+                related_model_name = "related_model"
+                related_model = cast(
+                    type[models.Model] | None, _getattr(model_field, related_model_name)
+                )
+                if related_model is None:
+                    raise ValueError("Field.related_model is None")
                 # Берем все объекты или ограниченное количество
-                objects = related_model.objects.all()[:100]
-                choices = [{"value": obj.id, "label": str(obj)} for obj in objects]
+                objects = _objects(related_model).all()[:100]
+                choices = [
+                    {"value": getattr(obj, "id", obj.pk), "label": str(obj)}
+                    for obj in objects
+                ]
 
             # Если поле с choices (TextChoices или Choices)
-            elif hasattr(model_field, "choices") and model_field.choices:
+            elif raw_choices:
                 choices = [
                     {"value": choice[0], "label": choice[1]}
-                    for choice in model_field.choices
+                    for choice in cast(Any, raw_choices)
                 ]
 
             # Если поле BooleanField
