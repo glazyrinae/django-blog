@@ -96,6 +96,20 @@ django-blog/
 
     Перейдите по адресу `http://localhost:8000`.
 
+### Дамп и восстановление БД через контейнер
+
+Снять дамп PostgreSQL в формате `custom`:
+
+```bash
+docker-compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -F c' > deploy/db_backup/blog.bk
+```
+
+Применить дамп:
+
+```bash
+docker-compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" -F c --clean --if-exists' < deploy/db_backup/blog.bk
+```
+
 ### Запуск в продакшене
 
 Для запуска в продакшене используется `docker-compose.prod.yml`. Этот файл включает в себя конфигурацию для Nginx в качестве обратного прокси и Certbot для получения SSL-сертификатов.
