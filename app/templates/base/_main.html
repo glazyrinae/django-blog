@@ -45,5 +45,31 @@
         <script src="{% static "plugins/popper.min.js" %}"></script>
         <script src="{% static "plugins/bootstrap/js/bootstrap.min.js" %}"></script>
     {% endblock %}
+    <script type="module">
+    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
+
+    const ACCENT = "#3dba52";
+
+    Chatbot.init({
+        chatflowid: "e12463a1-863f-42b2-8dc8-452cc22f9328",
+        apiHost: "http://localhost:3000",
+        theme: {
+        button: {
+            backgroundColor: ACCENT,
+            iconColor: "#ffffff"
+        },
+        chatWindow: {
+            titleBackgroundColor: ACCENT,
+            userMessage: {
+            backgroundColor: ACCENT,
+            textColor: "#ffffff"
+            },
+            textInput: {
+            sendButtonColor: ACCENT
+            }
+        }
+        }
+    });
+    </script>
     </body>
 </html>
