@@ -88,6 +88,11 @@ Thumbs.db
 
 deploy/db_data/
 deploy/db_backup/
+<<<<<<< HEAD
 deploy/socket/
 
 .codex
+=======
+
+pgbackrest/
+deploy/socket/

@@ -25,11 +25,12 @@ services:
       dockerfile: ./deploy/Dockerfile.postgres
     user: "${APP_UID:-1000}:${APP_GID:-1000}"
     volumes:
-      - ./deploy/db_data/postgresql.conf:/var/lib/postgresql/data/postgresql.conf:ro
+      - ./deploy/db_data/postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+      - ./deploy/db_data/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
       - ./deploy/db_data:/var/lib/postgresql/data
       - ./deploy/db_backup:/backup
       - ./deploy/socket:/var/run/postgresql
-      - ./pgbackrest/config:/etc/pgbackrest:ro
+      - ./pgbackrest/config:/etc/pgbackrest
       - ./pgbackrest/logs:/var/log/pgbackrest
       - ./tmp_pgbackrest:/tmp/pgbackrest
     environment:
